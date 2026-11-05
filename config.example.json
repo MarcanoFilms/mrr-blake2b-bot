@@ -22,7 +22,6 @@
   "token": "",
   "chat_id": ""
  },
-
  "dashboard_port": 7160,
  "dashboard_password": "",
  "own_addresses": [],
@@ -34,7 +33,7 @@
  "datum_service": "datum-convoy.service",
  "datum_service_scope": "user",
  "read_only": false,
- "bot_ui": false,
+ "bot_ui": true,
  "rent_address": "",
  "coin_label": "BTC",
  "unit_label": "sats",

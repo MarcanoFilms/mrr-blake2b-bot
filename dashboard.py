@@ -36,7 +36,7 @@ DASH_DEFAULTS = {
     "datum_service": "datum-convoy.service",   # unit whose journal is shown in the dashboard
     "datum_service_scope": "user",             # "user" (systemctl --user) or "system"
     "read_only": False,                        # true: the dashboard never spends or touches the bot
-    "bot_ui": False,                           # true: show the upstream bot's controls, history and log
+    "bot_ui": True,                            # false: hide the bot's controls, history and log (rent by hand only)
     "rent_address": "",                        # payout address for rentals made here ("" = the profile's)
     "coin_label": "BTC",                       # how the dashboard names MRR's currency...
     "unit_label": "sats",                      # ...and its hundred-millionth

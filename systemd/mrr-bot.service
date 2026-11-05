@@ -4,6 +4,6 @@ After=network-online.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=%h/mrr-command-center
-ExecStart=/usr/bin/python3 -I %h/mrr-command-center/mrr_bot.py run --live
+WorkingDirectory=%h/mrr-bot
+ExecStart=/usr/bin/python3 -I %h/mrr-bot/mrr_bot.py run --live
 TimeoutStartSec=300

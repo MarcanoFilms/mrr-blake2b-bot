@@ -136,6 +136,12 @@ canvas.spark{width:150px;height:34px;display:block}
 #t-market td.rig a{font-family:var(--mono)} #t-market td.rig small{display:block;max-width:230px;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
 .th1{font-weight:700}.th1.s{color:#7f8db0}.th1.m{color:var(--warn)}.th1.l{color:var(--cyan2)}.th1.xl{color:var(--ok);text-shadow:0 0 10px rgba(60,245,154,.5)}
 .face{width:46px;height:46px;flex:none}
+.left{width:64px;flex:none;text-align:center;line-height:1}
+.left b{display:block;font:700 19px var(--display);color:var(--cyan2);text-shadow:0 0 12px rgba(25,215,255,.45)}
+.left span{font:600 9.5px var(--ui);letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+.left.soon b{color:var(--warn);text-shadow:0 0 12px rgba(255,210,63,.5)}
+.runway{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:14px}
+.runway b{font:700 18px var(--display);color:var(--cyan2)}
 .vmid{display:flex;gap:12px;align-items:center}.vmid .vbars{flex:1}
 .star{background:none;border:0;clip-path:none;padding:0 4px;font-size:18px;color:#4f5c7c;cursor:pointer;line-height:1}
 .star.on{color:#ffd23f;text-shadow:0 0 10px rgba(255,210,63,.7)}.star:hover{box-shadow:none;color:#ffd23f}
@@ -566,6 +572,8 @@ function auditLine(id){
 }
 // Happy when the gateway gets more than both what was paid and what MRR reports, straight when
 // it is close to what was paid (within 5 %), sad when it gets less.
+// Remaining time, short: "34 h" under two days, "5,6 d" from then on.
+function fmtLeft(h){ return h<48 ? Math.max(0,Math.round(h))+' h' : (h/24).toFixed(1).replace('.',',')+' d'; }
 function face(x){
   const a=x.analysis; if(!a||a.delivered_th==null||!x.advertised_th) return '<svg class="face"></svg>';
   const d=a.delivered_th, paid=x.advertised_th, m=x.mrr_average_th||0;
@@ -575,6 +583,14 @@ function face(x){
   const tip = mood>0?'Llega más de lo pagado y de lo que dice MRR':mood===0?'Llega más o menos lo pagado':'Llega menos de lo pagado';
   return `<svg class="face" viewBox="0 0 46 46"><title>${tip} (${Math.round(d/paid*100)}%)</title><circle cx="23" cy="23" r="20" fill="none" stroke="${col}" stroke-width="2.6" style="filter:drop-shadow(0 0 6px ${col})"/>
     <circle cx="16" cy="18" r="2.6" fill="${col}"/><circle cx="30" cy="18" r="2.6" fill="${col}"/><path d="${mouth}" fill="none" stroke="${col}" stroke-width="2.6" stroke-linecap="round"/></svg>`;
+}
+// How long until no rental is left, and when the hashrate starts to drop.
+function runway(rs){
+  const live=rs.filter(x=>(x.left_h||0)>0); if(!live.length) return '';
+  const last=live.reduce((a,b)=>b.left_h>a.left_h?b:a), next=live.reduce((a,b)=>b.left_h<a.left_h?b:a);
+  const at=h=>new Date(Date.now()+h*3600e3).toLocaleString([], {weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+  return `<div class="runway">Te queda hashrate alquilado para <b>${fmtLeft(last.left_h)}</b> <span class="muted">(hasta ${at(last.left_h)}, cuando acaba ${esc(last.rig_name||'')})</span>
+    <div class="muted" style="margin-top:4px">El próximo en terminar: <b style="font-size:14px">${esc(next.rig_name||'')}</b> en ${fmtLeft(next.left_h)} (−${next.advertised_th.toFixed(1)} TH/s)</div></div>`;
 }
 function renderAudit(){
   document.body.classList.toggle('noaudit', !audit || !audit.enabled);
@@ -594,14 +610,15 @@ function renderAudit(){
      <div class="vbars">${bar('c','pagado',c)}${bar('m','MRR dice',m)}${bar('d','gateway',d)}</div>
      <div>${bad?`<span class="verd short">${bad} corto${bad>1?'s':''}</span>`:'<span class="verd ok">ninguno corto</span>'}
        <span class="muted" style="margin-left:8px">${ev.length} medidos${shared?' · '+shared+' con worker compartido':''}</span>
-       ${audit.sync&&audit.sync.error?'<div class="bad" style="margin-top:6px">MRR: '+esc(audit.sync.error)+'</div>':''}</div></div>`;
+       ${audit.sync&&audit.sync.error?'<div class="bad" style="margin-top:6px">MRR: '+esc(audit.sync.error)+'</div>':''}</div>
+     ${runway(rs)}</div>`;
   const mx2=Math.max(1,...rs.map(x=>Math.max(x.advertised_th,x.mrr_average_th||0,x.analysis?x.analysis.delivered_th:0)));
   const b2=(cls,lab,v,ex)=>`<div class="vb ${cls}"><span>${lab}</span><div class="tr"><i style="width:${((v||0)/mx2*100).toFixed(1)}%"></i></div><b>${v==null?'–':v.toFixed(2)}${ex||''}</b></div>`;
   rs.sort((p,q)=>q.advertised_th-p.advertised_th);
   $('#v-title').textContent = rs.length===1 ? '1 alquiler' : rs.length+' alquileres';
   $('#verdicts').innerHTML = rs.length? rs.map(x=>{ const a=x.analysis||{verdict:'none'};
     const got=a.delivered_th, pct=a.pct;
-    return `<div class="vrow"><div><a class="rn" href="https://www.miningrigrentals.com/rental/${esc(x.id)}" target="_blank" rel="noopener" title="Abrir el alquiler en MRR"><b>${esc(x.rig_name||'')}</b> ↗</a><div class="muted mono" style="font-size:11.5px">#${esc(x.id)}${a.worker?' · '+esc(a.worker):''}${a.worker?(a.connected?' · <span class="ok">● minando</span>':' · <span class="bad">● desconectado</span>'):''} · ${fmtH(x.left_h||0)} restantes</div>
+    return `<div class="vrow"><div><a class="rn" href="https://www.miningrigrentals.com/rental/${esc(x.id)}" target="_blank" rel="noopener" title="Abrir el alquiler en MRR"><b>${esc(x.rig_name||'')}</b> ↗</a><div class="muted mono" style="font-size:11.5px">#${esc(x.id)}${a.worker?' · '+esc(a.worker):''}${a.worker?(a.connected?' · <span class="ok">● minando</span>':' · <span class="bad">● desconectado</span>'):''}</div>
       <div class="vexp"><span>esperado <b>${x.advertised_th.toFixed(2)} TH/s</b></span><span>recibido <b class="got">${got!=null?got.toFixed(2)+' TH/s':'–'}</b>${pct!=null?' <span class="muted">('+pct.toFixed(0)+'%)</span>':''}</span></div>
       ${x.address?'<div class="addr" title="address a la que mina este alquiler">→ '+esc(x.address)+'</div>':''}
       ${a.partial?'<div class="muted" style="font-size:11.5px">medido desde '+new Date(a.observed_from*1000).toLocaleString([], {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+'</div>':''}
@@ -609,7 +626,7 @@ function renderAudit(){
          const why=!x.extensions?'El dueño del rig no permite extender':(room!=null&&room<1)?'Ya está en el máximo de horas del rig ('+x.max_h+' h)':'';
          return `<div class="row rw" style="margin-top:6px;flex-wrap:nowrap" title="${esc(why)}"><input type="number" step="1" min="1" ${room?'max="'+room+'"':''} value="${room?Math.min(24,room):24}" style="width:70px" id="vext-${esc(x.id)}" ${why?'disabled':''}><span class="muted">h</span>
         <button class="small primary" data-vext="${esc(x.id)}" ${why?'disabled':''}>Extender</button>${why?'<span class="muted" style="font-size:11.5px">'+esc(why)+'</span>':room!=null?'<span class="muted" style="font-size:11.5px">hasta '+room+' h más</span>':''}</div>`; })()}</div>
-      <div class="vmid">${face(x)}<div class="vbars">${b2('c','pagado',x.advertised_th)}${b2('m','MRR dice',x.mrr_average_th)}${b2('d','gateway',a.delivered_th, a.rel_err_pct?' <span class="muted">±'+a.rel_err_pct.toFixed(0)+'%</span>':'')}</div></div>
+      <div class="vmid"><div class="left ${(x.left_h||0)<6?'soon':''}" title="Tiempo que le queda a este alquiler"><b>${fmtLeft(x.left_h||0)}</b><span>quedan</span></div>${face(x)}<div class="vbars">${b2('c','pagado',x.advertised_th)}${b2('m','MRR dice',x.mrr_average_th)}${b2('d','gateway',a.delivered_th, a.rel_err_pct?' <span class="muted">±'+a.rel_err_pct.toFixed(0)+'%</span>':'')}</div></div>
       <div><span class="verd ${a.verdict}" title="${esc(VHELP[a.verdict]||'')}">${VTXT[a.verdict]||a.verdict}</span>${a.z!=null&&Math.abs(a.z)>audit.sigma?'<div class="muted mono" style="font-size:11px;margin-top:4px">'+Math.abs(a.z).toFixed(1)+' sigmas</div>':''}
         ${a.shares!=null?'<div class="muted mono" style="font-size:11px;margin-top:4px">'+a.shares.toLocaleString()+' / '+Math.round(a.expected_shares).toLocaleString()+' shares</div>':''}</div></div>`;}).join('')
     : '<div class="muted">sin rentas activas</div>';

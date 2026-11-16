@@ -1,0 +1,413 @@
+{
+ "ok": true,
+ "now": 1794699517,
+ "algo": "blake2b",
+ "delivery": "your own DATUM gateway (via PyBL\u00d8CK relay)",
+ "promo": {
+  "discount_pct": 10,
+  "until": 1794866400
+ },
+ "limits": {
+  "min_hours": 24,
+  "max_hours": 72,
+  "max_order_th": 1000,
+  "max_qty": 10
+ },
+ "pay_methods": [
+  "ln",
+  "xbt",
+  "xbtln"
+ ],
+ "packages": [
+  {
+   "id": "p1x24",
+   "hours": 24,
+   "unit_th": 1,
+   "max_qty": 2,
+   "total_sats": 2250,
+   "available": true,
+   "steps": [
+    {
+     "qty": 1,
+     "th": 1,
+     "total_sats": 2250
+    },
+    {
+     "qty": 2,
+     "th": 2,
+     "total_sats": 4705
+    }
+   ]
+  },
+  {
+   "id": "p4_5x24",
+   "hours": 24,
+   "unit_th": 4.5,
+   "max_qty": 3,
+   "total_sats": 8071,
+   "available": true,
+   "steps": [
+    {
+     "qty": 1,
+     "th": 4.5,
+     "total_sats": 8071
+    },
+    {
+     "qty": 2,
+     "th": 9,
+     "total_sats": 18195
+    },
+    {
+     "qty": 3,
+     "th": 13.5,
+     "total_sats": 29238
+    }
+   ]
+  },
+  {
+   "id": "p18x24",
+   "hours": 24,
+   "unit_th": 18,
+   "max_qty": 10,
+   "total_sats": 31936,
+   "available": true,
+   "steps": [
+    {
+     "qty": 1,
+     "th": 18,
+     "total_sats": 31936
+    },
+    {
+     "qty": 2,
+     "th": 36,
+     "total_sats": 65227
+    },
+    {
+     "qty": 3,
+     "th": 54,
+     "total_sats": 98518
+    },
+    {
+     "qty": 4,
+     "th": 72,
+     "total_sats": 131809
+    },
+    {
+     "qty": 5,
+     "th": 90,
+     "total_sats": 165100
+    },
+    {
+     "qty": 6,
+     "th": 108,
+     "total_sats": 198391
+    },
+    {
+     "qty": 7,
+     "th": 126,
+     "total_sats": 231682
+    },
+    {
+     "qty": 8,
+     "th": 144,
+     "total_sats": 264973
+    },
+    {
+     "qty": 9,
+     "th": 162,
+     "total_sats": 298264
+    },
+    {
+     "qty": 10,
+     "th": 180,
+     "total_sats": 331555
+    }
+   ]
+  },
+  {
+   "id": "p100x24",
+   "hours": 24,
+   "unit_th": 100,
+   "max_qty": 1,
+   "total_sats": 302400,
+   "available": true,
+   "steps": [
+    {
+     "qty": 1,
+     "th": 100,
+     "total_sats": 302400
+    }
+   ]
+  },
+  {
+   "id": "p500x24",
+   "hours": 24,
+   "unit_th": 500,
+   "max_qty": 4,
+   "total_sats": 1485000,
+   "available": true,
+   "steps": [
+    {
+     "qty": 1,
+     "th": 500,
+     "total_sats": 1485000
+    },
+    {
+     "qty": 2,
+     "th": 1000,
+     "total_sats": 2975670
+    },
+    {
+     "qty": 3,
+     "th": 1500,
+     "total_sats": 4466340
+    },
+    {
+     "qty": 4,
+     "th": 2000,
+     "total_sats": 5957010
+    }
+   ]
+  },
+  {
+   "id": "p2000x24",
+   "hours": 24,
+   "unit_th": 2000,
+   "max_qty": 1,
+   "total_sats": 5940000,
+   "available": true,
+   "steps": [
+    {
+     "qty": 1,
+     "th": 2000,
+     "total_sats": 5940000
+    }
+   ]
+  },
+  {
+   "id": "p1x48",
+   "hours": 48,
+   "unit_th": 1,
+   "max_qty": 1,
+   "total_sats": 4500,
+   "available": true,
+   "steps": [
+    {
+     "qty": 1,
+     "th": 1,
+     "total_sats": 4500
+    }
+   ]
+  },
+  {
+   "id": "p4_4x48",
+   "hours": 48,
+   "unit_th": 4.4,
+   "max_qty": 2,
+   "total_sats": 17226,
+   "available": true,
+   "steps": [
+    {
+     "qty": 1,
+     "th": 4.4,
+     "total_sats": 17226
+    },
+    {
+     "qty": 2,
+     "th": 8.8,
+     "total_sats": 37026
+    }
+   ]
+  },
+  {
+   "id": "p16_1x48",
+   "hours": 48,
+   "unit_th": 16.1,
+   "max_qty": 1,
+   "total_sats": 59738,
+   "available": true,
+   "steps": [
+    {
+     "qty": 1,
+     "th": 16.1,
+     "total_sats": 59738
+    }
+   ]
+  },
+  {
+   "id": "p56x48",
+   "hours": 48,
+   "unit_th": 56,
+   "max_qty": 1,
+   "total_sats": 352418,
+   "available": true,
+   "steps": [
+    {
+     "qty": 1,
+     "th": 56,
+     "total_sats": 352418
+    }
+   ]
+  },
+  {
+   "id": "p300x48",
+   "hours": 48,
+   "unit_th": 300,
+   "max_qty": 2,
+   "total_sats": 1782000,
+   "available": true,
+   "steps": [
+    {
+     "qty": 1,
+     "th": 300,
+     "total_sats": 1782000
+    },
+    {
+     "qty": 2,
+     "th": 600,
+     "total_sats": 3570804
+    }
+   ]
+  },
+  {
+   "id": "p1000x48",
+   "hours": 48,
+   "unit_th": 1000,
+   "max_qty": 1,
+   "total_sats": 5962680,
+   "available": true,
+   "steps": [
+    {
+     "qty": 1,
+     "th": 1000,
+     "total_sats": 5962680
+    }
+   ]
+  },
+  {
+   "id": "p1_9x72",
+   "hours": 72,
+   "unit_th": 1.9,
+   "max_qty": 4,
+   "total_sats": 15390,
+   "available": true,
+   "steps": [
+    {
+     "qty": 1,
+     "th": 1.9,
+     "total_sats": 15390
+    },
+    {
+     "qty": 2,
+     "th": 3.8,
+     "total_sats": 30780
+    },
+    {
+     "qty": 3,
+     "th": 5.6,
+     "total_sats": 46170
+    },
+    {
+     "qty": 4,
+     "th": 7.6,
+     "total_sats": 61560
+    }
+   ]
+  },
+  {
+   "id": "p5_5x72",
+   "hours": 72,
+   "unit_th": 5.5,
+   "max_qty": 2,
+   "total_sats": 31151,
+   "available": true,
+   "steps": [
+    {
+     "qty": 1,
+     "th": 5.5,
+     "total_sats": 31151
+    },
+    {
+     "qty": 2,
+     "th": 11,
+     "total_sats": 68519
+    }
+   ]
+  },
+  {
+   "id": "p19x72",
+   "hours": 72,
+   "unit_th": 19,
+   "max_qty": 4,
+   "total_sats": 102221,
+   "available": true,
+   "steps": [
+    {
+     "qty": 1,
+     "th": 19,
+     "total_sats": 102221
+    },
+    {
+     "qty": 2,
+     "th": 38,
+     "total_sats": 214446
+    },
+    {
+     "qty": 3,
+     "th": 57,
+     "total_sats": 361096
+    },
+    {
+     "qty": 4,
+     "th": 76,
+     "total_sats": 521414
+    }
+   ]
+  },
+  {
+   "id": "p56x72",
+   "hours": 72,
+   "unit_th": 56,
+   "max_qty": 1,
+   "total_sats": 528627,
+   "available": true,
+   "steps": [
+    {
+     "qty": 1,
+     "th": 56,
+     "total_sats": 528627
+    }
+   ]
+  },
+  {
+   "id": "p140x72",
+   "hours": 72,
+   "unit_th": 140,
+   "max_qty": 1,
+   "total_sats": 1181289,
+   "available": true,
+   "steps": [
+    {
+     "qty": 1,
+     "th": 140,
+     "total_sats": 1181289
+    }
+   ]
+  },
+  {
+   "id": "p500x72",
+   "hours": 72,
+   "unit_th": 500,
+   "max_qty": 1,
+   "total_sats": 4455000,
+   "available": true,
+   "steps": [
+    {
+     "qty": 1,
+     "th": 500,
+     "total_sats": 4455000
+    }
+   ]
+  }
+ ]
+}

@@ -155,6 +155,36 @@ by the bot keep the profile's user.
 Known limit: a connection that opens and closes between two polls (10 s) is not
 counted, so the gateway figure can read slightly low for rigs that reconnect very often.
 
+### PyBLØCK rentals
+
+Next to MRR the market card lists the packages of the
+[PyBLØCK Market](https://b.pyblock.xyz:8443/api/market/v1.php/openapi.json) (public API v1,
+`/rentals/packages`, cached 2 min) in its own purple box: TH/s, hours, units (each step
+has its own price), total, price per TH per day and how it compares with MRR's market
+(`last_10` plus MRR's fee, same unit). The promo, if any, is shown as a badge. A
+**Probar gateway** button runs PyBLØCK's own gateway check (`/payout/gateway-test`)
+without creating anything.
+
+Renting is manual, like MRR: choose units and pay method (`ln`, `xbtln`, `xbt`), confirm
+(total, TH/s, hours, gateway, payout address), and the dashboard sends the order with a
+random `client_nonce` that it keeps, so a retry after a timeout or a rate limit is the same
+order. PyBLØCK checks the gateway first; its refusal is shown as is. The answer is an
+invoice (or an on-chain address and exact amount) shown with a QR code and its
+countdown: **you pay it from your own wallet**, the dashboard never pays. Its status is
+then read every 15 s while unpaid and every minute while it runs.
+
+The gateway user is `<address>.<pyblock.worker_prefix><6 hex>`, so the order has a worker
+of its own in the gateway table (labelled `PyBLOCK rental`). The address is
+`pyblock.address`, else `rent_address`, else the MRR profile's.
+
+The order id PyBLØCK returns **is the order's secret**. It is kept only in `pyblock.json`
+(mode 600, gitignored), never logged, and never returned by the dashboard's API: orders
+are referred to by a local random `ref`, and "ver en PyBLØCK" goes through a redirect.
+PyBLØCK orders appear in the rentals card with a purple badge (contracted TH/s, what
+PyBLØCK reports, what the gateway sees for its worker, time left, state), in the rented
+TH/s totals and in `/api/overview` under `pyblock`. Created / paid / ended notices go to
+the same Telegram chat, without the order id or the invoice.
+
 ### History and favourites
 
 When a rental stops being active, the audit judges it over its whole length (as far as
@@ -242,6 +272,12 @@ marked *bot* only matter for the bot.
 | `rent_address` | `""` | payout address for rentals made from the dashboard, `""` = profile's |
 | `coin_label` / `unit_label` | `BTC` / `sats` | names shown for MRR's currency and its 1e-8 unit |
 | `alt_price` | `{}` | optional second price unit: `label`, `url`, `path`, `invert` |
+| `pyblock.enabled` | true | show PyBLØCK packages and allow manual orders |
+| `pyblock.api` | `https://b.pyblock.xyz:8443/api/market/v1.php` | PyBLØCK Market API base |
+| `pyblock.gateway.host/port` | | public stratum of your DATUM gateway (required to order) |
+| `pyblock.backup.host/port` | | optional second gateway |
+| `pyblock.address` | `""` | payout address for PyBLØCK orders, `""` = `rent_address`, then the profile's |
+| `pyblock.worker_prefix` | `pyb` | worker = prefix + 6 random hex per order |
 | `audit.enabled` | true | record gateway samples and show the rental audit |
 | `audit.assign_workers` | false | give each active rental its own worker through the MRR API |
 | `audit.worker_prefix` | `mrr` | worker name = prefix + rental id |
@@ -256,6 +292,8 @@ marked *bot* only matter for the bot.
 ```
 mrr_bot.py        the bot (CLI + MRR API client + strategy)
 dashboard.py      MRR Command Center server
+pyblock.py        PyBLØCK Market: packages, manual orders, order status
+tests/            unit tests (python3 -m unittest discover -s tests)
 audit.py          rental audit: gateway samples, verdicts, per-rental worker, history, favourites
 www/index.html    dashboard UI (single file, no build step)
 www/img/          logo, favicon and login cover
@@ -267,6 +305,7 @@ config.json       your secrets and knobs (gitignored)
 state.json        nonce + action log (gitignored)
 history.json      gateway hashrate history (gitignored)
 audit.db          gateway samples, rental history, favourites (gitignored)
+pyblock.json      PyBLØCK orders with their secret ids (600, gitignored)
 ```
 
 ## Notes and gotchas

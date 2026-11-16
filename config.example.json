@@ -38,6 +38,14 @@
  "coin_label": "BTC",
  "unit_label": "sats",
  "alt_price": {},
+ "pyblock": {
+  "enabled": true,
+  "api": "https://b.pyblock.xyz:8443/api/market/v1.php",
+  "gateway": {"host": "your-gateway.example.com", "port": 23334},
+  "backup": {"host": "", "port": 0},
+  "address": "",
+  "worker_prefix": "pyb"
+ },
  "audit": {
   "enabled": true,
   "assign_workers": false,

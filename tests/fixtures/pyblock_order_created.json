@@ -1,0 +1,11 @@
+{
+ "ok": true,
+ "order_id": "11111111-2222-4333-8444-555555555555",
+ "status": "pending_payment",
+ "pay_method": "ln",
+ "invoice": "lnbc1fakeinvoicefortestsonly",
+ "total_sats": 63872,
+ "seconds_left": 600,
+ "status_url": "https://example.invalid/api/market/v1.php/rentals/orders/11111111-2222-4333-8444-555555555555",
+ "tracking_url": "https://example.invalid/rentals.php?order=11111111-2222-4333-8444-555555555555"
+}

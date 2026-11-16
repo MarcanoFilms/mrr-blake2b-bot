@@ -150,13 +150,16 @@ class Audit:
 
     # ------------------------------------------------------------------ work
     def _work(self, worker, start, end):
-        """Accepted work of `worker` in [start, end]: (difficulty, shares, connections, avg vdiff, last seen)."""
+        """Accepted work of `worker` in [start, end]: (difficulty, shares, connections, avg vdiff, last seen).
+        `worker` may also be a list of workers, measured together."""
+        names = list(worker) if isinstance(worker, (list, tuple, set)) else [worker]
+        cond = "worker IN (%s)" % ",".join("?" * len(names))
         with self.db() as conn:
             rows = conn.execute(
                 "SELECT ts, skey, session_start, shares, vdiff FROM samples"
-                " WHERE worker = ? AND ts >= ? AND ts <= ? ORDER BY skey, ts",
-                (worker, int(start - 2 * self.poll), int(end + self.poll))).fetchall()
-            last = conn.execute("SELECT MAX(ts) FROM samples WHERE worker = ?", (worker,)).fetchone()[0]
+                f" WHERE {cond} AND ts >= ? AND ts <= ? ORDER BY skey, ts",
+                (*names, int(start - 2 * self.poll), int(end + self.poll))).fetchall()
+            last = conn.execute(f"SELECT MAX(ts) FROM samples WHERE {cond}", names).fetchone()[0]
         work = 0.0
         shares = 0
         prev = {}
@@ -218,7 +221,7 @@ class Audit:
         else:
             verdict = "ok"
         return {
-            "worker": worker, "shared": shared,
+            "worker": worker if isinstance(worker, str) or worker is None else ",".join(worker), "shared": shared,
             "observed_from": int(win_start), "partial": win_start > start + 2 * self.poll,
             "elapsed_h": elapsed / 3600, "delivered_th": delivered,
             "pct": delivered / promised * 100 if promised else None,
@@ -398,7 +401,7 @@ class Audit:
             k = known.get(str(r["id"])) or {}
             w = k.get("worker")
             a = self.analyse(r, w, k.get("observe_from"), count.get(w, 0) > 1) if w else None
-            out.append({"id": r["id"], "rig_name": r.get("rig_name"), "advertised_th": r["advertised_th"],
+            out.append({"id": r["id"], "rig_id": r.get("rig_id"), "rig_name": r.get("rig_name"), "advertised_th": r["advertised_th"],
                         "mrr_average_th": r.get("average_th"), "mrr_average_pct": r.get("average_pct"),
                         "left_h": r.get("left_h"), "address": k.get("address"), "analysis": a,
                         "length_h": r.get("length_h"), "max_h": r.get("maxhours"), "extensions": r.get("extensions")})

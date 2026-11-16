@@ -8,3 +8,5 @@ __pycache__/
 audit.db
 audit.db-wal
 audit.db-shm
+pyblock.json
+pyblock.json.tmp

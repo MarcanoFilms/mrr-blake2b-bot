@@ -1,0 +1,12 @@
+{
+ "ok": true,
+ "order": {
+  "status": "active",
+  "pay_method": "ln",
+  "hashrate_ths": 18,
+  "live_ths": 17.4,
+  "percent_done": 58.3,
+  "remaining_secs": 36000,
+  "total_sats": 63872
+ }
+}

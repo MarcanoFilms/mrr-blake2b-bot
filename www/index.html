@@ -13,7 +13,7 @@
   --bg:#05070d;--bg2:#0a0e18;--panel:rgba(12,17,30,.78);--panel2:rgba(18,25,42,.9);--line:#1b2740;--line2:#2a3b5e;
   --text:#dfe7f5;--muted:#7f8db0;--dim:#4f5c7c;
   --accent:#f7931a;--accent2:#ffb347;--cyan:#19d7ff;--cyan2:#7eeaff;--ok:#3cf59a;--warn:#ffd23f;--bad:#ff3b5c;--info:#19d7ff;
-  --display:"Orbitron","Rajdhani",system-ui,sans-serif;--ui:"Rajdhani","Segoe UI",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --pyb:#b96bff;--display:"Orbitron","Rajdhani",system-ui,sans-serif;--ui:"Rajdhani","Segoe UI",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --cut:14px;
 }
 *{box-sizing:border-box}
@@ -91,7 +91,27 @@ td.mono,.mono{font-family:var(--mono);font-size:12.5px}
 .tag.own{border-color:rgba(60,245,154,.6);color:var(--ok);background:rgba(60,245,154,.07)}
 .tag.foreign{border-color:rgba(255,59,92,.7);color:var(--bad);background:rgba(255,59,92,.08);animation:pulse 1.6s infinite}
 .tag.mrr{border-color:rgba(25,215,255,.6);color:var(--cyan);background:rgba(25,215,255,.07)}
-.tag.pyb{border-color:rgba(247,147,26,.6);color:var(--accent2);background:rgba(247,147,26,.07)}
+.tag.pyb{border-color:rgba(185,107,255,.7);color:var(--pyb);background:rgba(185,107,255,.1)}
+.tag.mrrb{border-color:rgba(25,215,255,.6);color:var(--cyan);background:rgba(25,215,255,.07)}
+.pybbox{border:1px solid rgba(185,107,255,.35);background:rgba(185,107,255,.04);padding:12px 14px;margin-bottom:16px;position:relative}
+.pybbox::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--pyb);box-shadow:0 0 10px var(--pyb)}
+.pybbox h3{margin:0 0 8px;font:700 12px var(--display);letter-spacing:2px;text-transform:uppercase;color:var(--pyb);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.promo{display:inline-block;padding:2px 9px;font:700 11px var(--ui);letter-spacing:1px;color:#140a00;background:linear-gradient(135deg,#ffd23f,#f7931a)}
+#t-pyb th{color:#d6b3ff;background:rgba(185,107,255,.06)} #t-pyb td,#t-pyb th{padding:7px 8px}
+#t-pyb select{width:auto;padding:4px 6px;font-size:12.5px}
+button.pybbtn{background:linear-gradient(135deg,#b96bff,#7d3fd6);border-color:transparent;color:#fff;font-weight:700}
+button.pybbtn:hover{box-shadow:0 0 18px rgba(185,107,255,.6);color:#fff}
+.vrow.pyb{border-left:2px solid var(--pyb);padding-left:10px;background:rgba(185,107,255,.035)}
+.vb.p i{background:linear-gradient(90deg,rgba(185,107,255,.35),var(--pyb));box-shadow:0 0 8px rgba(185,107,255,.6)}
+.verd.unpaid{color:var(--muted);border-color:var(--line2);background:transparent;text-transform:none;letter-spacing:.3px}
+.vrow.pyb.dim{opacity:.75;grid-template-columns:1fr auto}
+.tag.ext{border-color:var(--line2);color:var(--muted)}
+.pybadd{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 10px;font-size:12.5px}
+.pybadd input{width:auto;flex:1 1 220px;min-width:160px;font:500 12px var(--mono);padding:5px 8px}
+.pybadd input.w{flex:0 1 170px}
+.verd.pend{color:#d6b3ff;border-color:rgba(185,107,255,.6);background:rgba(185,107,255,.08)}
+.pybpay{text-align:center}.pybpay canvas{width:230px;height:230px;background:#fff;padding:8px;margin:8px auto;display:block}
+.pybpay .inv{font:500 11px var(--mono);word-break:break-all;color:var(--muted);cursor:pointer;max-height:70px;overflow:auto;border:1px dashed var(--line2);padding:6px;margin:6px 0}
 .tag.idle{border-color:rgba(255,210,63,.5);color:var(--warn);background:rgba(255,210,63,.06)}
 .hbar{display:inline-block;vertical-align:middle;width:64px;height:5px;background:#0d1322;border:1px solid var(--line);margin-left:8px;overflow:hidden}
 .hbar i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--accent));box-shadow:0 0 8px var(--cyan)}
@@ -144,8 +164,12 @@ canvas.spark{width:150px;height:34px;display:block}
 .runway b{font:700 18px var(--display);color:var(--cyan2)}
 .vmid{display:flex;gap:12px;align-items:center}.vmid .vbars{flex:1}
 .star{background:none;border:0;clip-path:none;padding:0 4px;font-size:18px;color:#4f5c7c;cursor:pointer;line-height:1}
+.vface{display:flex;flex-direction:column;align-items:center;gap:2px}.vface .star{font-size:26px}
 .star.on{color:#ffd23f;text-shadow:0 0 10px rgba(255,210,63,.7)}.star:hover{box-shadow:none;color:#ffd23f}
 #t-market tr.fav{background:rgba(255,210,63,.05)}
+#t-market td.pc,#t-pyb td.pc{font-family:var(--mono);font-weight:700}
+#t-market td.pg,#t-pyb td.pg{color:#3cf59a;text-shadow:0 0 6px rgba(60,245,154,.35)} #t-market td.py,#t-pyb td.py{color:#ffd23f;text-shadow:0 0 6px rgba(255,210,63,.35)} #t-market td.pr,#t-pyb td.pr{color:#ff3b5c;text-shadow:0 0 6px rgba(255,59,92,.35)}
+#t-market tr.best{background:rgba(25,215,255,.06)} .tag.best{border-color:rgba(25,215,255,.6);color:var(--cyan);font-size:10px;padding:1px 5px}
 .vrow a.rn{color:var(--text)}.vrow a.rn:hover{color:var(--cyan2)}
 .flag{font-size:17px;vertical-align:-2px;margin-right:5px}
 .ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}
@@ -172,6 +196,8 @@ body.nobot #hashcard{grid-column:span 12}
 .vexp{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;font:500 12.5px var(--mono)}
 .vexp b{color:#fff}.vexp .got{color:var(--accent2)}
 .addr{font:500 11.5px var(--mono);color:var(--muted);word-break:break-all}
+.vprice{font:500 11.5px var(--mono);color:var(--muted);margin-top:3px}.vprice b{color:var(--text)}.vprice b.pg{color:#3cf59a}.vprice b.py{color:#ffd23f}
+.star.fixed{cursor:default}.star.fixed:hover{color:#4f5c7c}.star.fixed.on:hover{color:#ffd23f}
 .vrow{display:grid;grid-template-columns:minmax(180px,1.3fr) 3fr minmax(120px,.8fr);gap:14px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
 .vrow:first-child{border-top:0}
 .vbars{display:grid;gap:4px}
@@ -198,6 +224,7 @@ body.nobot #hashcard{grid-column:span 12}
   <div class="pills">
     <span class="pill" id="p-gw">gateway: …</span>
     <span class="pill" id="p-pool">pool: …</span>
+    <span class="pill" id="p-bal">saldo MRR: …</span>
     <span class="pill bot-ui" id="p-timer">bot: …</span>
     <span class="pill" id="p-upd">actualizado: …</span>
   </div>
@@ -265,6 +292,7 @@ body.nobot #hashcard{grid-column:span 12}
 
   <section class="card span12 audit-only"><i class="corner tr"></i><i class="corner bl"></i>
     <h2><span id="v-title">Alquileres</span> <span class="right">pagado · lo que dice MRR · lo que llega al gateway</span></h2>
+    <div id="pyb-orders"></div>
     <div id="verdicts" class="muted">consultando…</div>
   </section>
 
@@ -289,7 +317,7 @@ body.nobot #hashcard{grid-column:span 12}
     </tr></thead><tbody></tbody></table></div>
     <div class="legend">
       <span><span class="tag mrr">MRR proxy</span> rig alquilado en MiningRigRentals (llega vía su proxy)</span>
-      <span><span class="tag pyb">PyBLOCK rental</span> hashrate alquilado desde la app de PyBLOCK</span>
+      <span><span class="tag pyb">PyBLOCK rental</span> hashrate alquilado en PyBLØCK (worker <span class="mono">pyb…</span> si lo pediste desde aquí)</span>
       <span><span class="tag own">propia</span> paga a una dirección tuya</span>
       <span><span class="tag foreign">ajena</span> alguien de la comunidad minando a su propia dirección</span>
       <span><span class="tag idle">sin suscribir</span> conexión TCP abierta que nunca envió <code>mining.subscribe</code> (escáneres de puertos, sondas, clientes mal configurados)</span>
@@ -297,7 +325,8 @@ body.nobot #hashcard{grid-column:span 12}
   </section>
 
   <section class="card span6 noaudit-only"><i class="corner tr"></i><i class="corner bl"></i>
-    <h2>Rentas activas en MRR</h2>
+    <h2>Rentas activas <span class="tag mrrb">MRR</span> <span class="tag pyb">PyBLØCK</span></h2>
+    <div id="pyb-orders2"></div>
     <div id="rentals"></div>
   </section>
 
@@ -310,6 +339,20 @@ body.nobot #hashcard{grid-column:span 12}
     <h2>Mercado Blake2B <span class="muted" style="font:500 12px var(--ui);letter-spacing:0;text-transform:none">rigs usables, más baratos primero · alquilar a mano</span>
       <span class="right row"><label class="muted" style="display:inline-flex;gap:5px;align-items:center;font:600 12px var(--ui)"><input type="checkbox" id="only-fav" style="width:auto"> solo ⭐</label> presupuesto <input id="mkt-budget" type="number" step="0.0001" style="width:130px" placeholder="auto"> <button id="btn-market" class="small">Actualizar</button></span>
     </h2>
+    <div class="pybbox" id="pyb-box" style="display:none">
+      <h3><span class="tag pyb">PyBLØCK</span> paquetes de hashrate <span id="pyb-promo"></span><span class="right muted" style="margin-left:auto;font:500 12px var(--mono);letter-spacing:0;text-transform:none" id="pyb-info"></span></h3>
+      <div class="muted" style="font-size:12.5px;margin-bottom:8px" id="pyb-where"></div>
+      <div class="pybadd" title="Un pedido que hiciste en la web o la app de PyBLØCK (cualquier forma de pago): el panel lo sigue como los suyos. El identificador es secreto: se guarda solo en pyblock.json y no se muestra.">
+        <span style="color:#d6b3ff">Añadir orden de PyBLØCK</span>
+        <input id="pyb-add-id" type="password" autocomplete="off" spellcheck="false" placeholder="id del pedido o enlace de seguimiento">
+        <input id="pyb-add-w" class="w" autocomplete="off" spellcheck="false" placeholder="worker (opcional)" title="El worker con el que mina en tu gateway (nombre o dirección.nombre). Sin él se mide por la dirección de cobro, de forma aproximada.">
+        <button class="small pybbtn" id="pyb-add">Añadir</button></div>
+      <div class="scroll"><table id="t-pyb"><thead><tr>
+        <th>Paquete</th><th title="TH/s por unidad">TH/s</th><th>Horas</th><th title="Unidades (máquinas); el precio no es lineal: cada paso tiene el suyo">Uds</th><th title="TH/s totales del pedido">Total TH/s</th><th class="pyb-unit-tot">sats</th><th class="pyb-unit-day" title="Total / TH / días">sats/TH/día</th><th title="Frente al mercado de MRR (últimos 10 alquileres, con su fee). Negativo = PyBLØCK más barato">vs MRR</th><th>Pago</th><th></th>
+      </tr></thead><tbody></tbody></table></div>
+      <div class="muted" style="font-size:12px;margin-top:6px">Mismo «sats» que el mercado de MRR. Solo se pide si confirmas; la factura la pagas tú desde tu wallet (aquí no se paga nada solo). Sin reembolsos, según PyBLØCK.</div>
+    </div>
+    <h3 style="margin:4px 0 8px;font:700 12px var(--display);letter-spacing:2px;text-transform:uppercase;color:var(--cyan2)"><span class="tag mrrb">MRR</span> MiningRigRentals</h3>
     <div class="row rw" style="margin-bottom:10px">
       <label style="font:600 10px var(--ui);color:var(--muted);text-transform:uppercase;letter-spacing:1.2px">Address de cobro de lo que alquiles aquí</label>
       <input id="rent-addr" style="flex:1;min-width:260px" placeholder="vacío = la del perfil de pool de MRR" spellcheck="false">
@@ -318,7 +361,7 @@ body.nobot #hashcard{grid-column:span 12}
     <div class="muted rw" style="font-size:12.5px;margin:-4px 0 10px">Cada alquiler mina como <span class="mono">address.mrr&lt;número de alquiler&gt;</span>: un worker propio desde el primer minuto, para que el cotejo lo separe de los demás.</div>
     <div id="mkt-best" class="muted" style="margin-bottom:10px"></div>
     <div class="scroll"><table id="t-market"><thead><tr>
-      <th title="Favoritos: se marcan solos cuando un alquiler termina cumpliendo; también a mano">⭐</th><th>Rig</th><th>Región</th><th title="Hashrate anunciado">Hashrate</th><th title="Hashrate que ha dado el rig en las últimas 24 h según MRR; la línea discontinua es lo anunciado">Últimas 24 h</th><th title="Rig Performance Index de MRR: cómo ha cumplido el rig a lo largo de sus alquileres (100 = da lo anunciado)">RPI</th><th title="Lo que ha dado en los últimos 30 min frente a lo anunciado">Perf 30 min</th><th id="mkt-unit-h" title="Precio por TH y día">sats/TH/día</th><th id="mkt-hour-h" title="Lo que cuesta cada hora de este rig, con la comisión de MRR">sats/h (con fee)</th><th>Horas min–max</th><th></th>
+      <th title="Favoritos: se marcan solos cuando un alquiler termina cumpliendo; también a mano">⭐</th><th>Rig</th><th>Región</th><th title="Hashrate anunciado">Hashrate</th><th title="Hashrate que ha dado el rig en las últimas 24 h según MRR; la línea discontinua es lo anunciado">Últimas 24 h</th><th title="Rig Performance Index de MRR: cómo ha cumplido el rig a lo largo de sus alquileres (100 = da lo anunciado)">RPI</th><th title="Media de lo que ha dado en las últimas 24 h frente a lo anunciado (de la gráfica)">Perf 24 h</th><th title="Lo que ha dado en los últimos 30 min frente a lo anunciado">Perf 30 min</th><th id="mkt-unit-h" title="Precio por TH y día">sats/TH/día</th><th id="mkt-hour-h" title="Lo que cuesta cada hora de este rig, con la comisión de MRR">sats/h (con fee)</th><th>Horas min–max</th><th></th>
     </tr></thead><tbody></tbody></table></div>
   </section>
 
@@ -332,6 +375,7 @@ body.nobot #hashcard{grid-column:span 12}
 </main>
 
 <div class="toast" id="toast"></div>
+<dialog id="pyb-dlg"><div class="pybpay" id="pyb-pay"></div><div class="row" style="justify-content:flex-end;margin-top:12px"><button id="pyb-dlg-close">Cerrar</button></div></dialog>
 <dialog id="dlg"><div id="dlg-body"></div><div class="row" style="justify-content:flex-end;margin-top:16px"><button id="dlg-no">Cancelar</button><button id="dlg-yes" class="primary">Confirmar</button></div></dialog>
 
 <script>
@@ -393,6 +437,7 @@ function render(d){
     $('#k-rentals-s').textContent = r.length ? r.map(x=>x.advertised+' · '+fmtH(x.left_h)+' restantes').join(' | ') : 'ninguna';
     $('#k-bal').textContent = fmtBtc(mrr.balance.confirmed);
     $('#k-bal-s').textContent = L().coin+' · sin confirmar '+fmtBtc(mrr.balance.unconfirmed);
+    pill('#p-bal', 'saldo MRR: <b>'+fmtBtc(mrr.balance.confirmed)+'</b>'+(Number(mrr.balance.unconfirmed)>0?' · +'+fmtBtc(mrr.balance.unconfirmed)+' sin conf.':''), 'ok');
     const u=L().unit, alt=altOf(mrr.market.last_10);
     $('#k-mkt').textContent = units(mrr.market.last_10);
     $('#k-mkt-s').textContent = u+'/TH/día'+(alt?' ≈ '+alt+'/TH/día':'')+' · mín '+units(mrr.market.lowest)+' · '+mrr.market.available_rigs+' rigs / '+mrr.market.available_hash+' libres';
@@ -408,6 +453,7 @@ function render(d){
   const f=$('#cfg'); if(!f.dataset.dirty){ for(const [k,v] of Object.entries(d.config)){ const el=f.elements[k]; if(!el) continue; el.value = Array.isArray(v)? v.join(', ') : (typeof v==='boolean'? String(v) : v); } }
   renderClients(gw, d.own_addresses||[]);
   renderRentals(mrr);
+  renderPyb(d.pyblock);
   drawChart(d.history||[]);
 }
 
@@ -457,8 +503,9 @@ function renderRentals(mrr){
     try{
       const q = await api('/api/extend',{rental:id,hours,quote_only:true});
       const c = q.quote||{};
-      if(b.dataset.q){ toast(`Extender ${hours} h costaría ${c.cost} ${c.currency||'BTC'} (nuevo total ${c.new_hrs} h)`); return; }
-      if(!await confirmDlg(`<b>Extender renta #${id} ${hours} h</b><p>Coste: <b>${c.cost} ${c.currency||'BTC'}</b> · total tras extender: ${c.new_hrs} h</p>`)) return;
+      const cs=c.cost_sats!=null?'≈ '+Math.round(c.cost_sats)+' Spamsuits':'(MRR lo calcula al extender)';
+      if(b.dataset.q){ toast(`Extender ${hours} h costaría ${cs} (nuevo total ${c.new_hrs} h)`); return; }
+      if(!await confirmDlg(`<b>Extender renta #${id} ${hours} h</b><p>Coste: <b>${cs}</b> · total tras extender: ${c.new_hrs} h</p>`)) return;
       const r = await api('/api/extend',{rental:id,hours}); toast(r.summary); refresh(true);
     }catch(e){ toast(e.message,true); }
   });
@@ -491,12 +538,12 @@ async function loadMarket(){
     const C=L().coin;
     $('#mkt-best').innerHTML = m.best ? `Saldo para alquilar: <b>${fmtBtc(m.budget)} ${esc(C)}</b>. Lo que más TH·h da ahora: <b>${esc(m.best.name)}</b> ${m.best.adv_th.toFixed(2)} TH × ${m.best.hours.toFixed(1)} h por ${fmtBtc(m.best.cost)} ${esc(C)} (fee incluida)` : `Con ${fmtBtc(m.budget)} ${esc(C)} no alcanza el mínimo de ningún rig usable.`;
     const favs=new Set(((hist&&hist.favorites)||[]).map(f=>String(f.rig_id))), onlyFav=$('#only-fav').checked;
-    $('#t-market tbody').innerHTML = m.rigs.filter(r=>!onlyFav||favs.has(String(r.id))).map(r=>`<tr class="${r.affordable?'':'muted'} ${favs.has(String(r.id))?'fav':''}">
+    $('#t-market tbody').innerHTML = m.rigs.filter(r=>!onlyFav||favs.has(String(r.id))).map(r=>`<tr class="${r.affordable?'':'muted'} ${favs.has(String(r.id))?'fav':''} ${m.best&&String(m.best.rig)===String(r.id)?'best':''}">
       <td><button class="star ${favs.has(String(r.id))?'on':''}" data-fav="${esc(r.id)}" data-name="${esc(r.name)}" title="${favs.has(String(r.id))?'Quitar de favoritos':'Marcar como favorito'}">${favs.has(String(r.id))?'★':'☆'}</button></td>
-      <td class="rig"><a href="https://www.miningrigrentals.com/rigs/${esc(r.id)}" target="_blank" rel="noopener">${esc(r.id)}</a><small title="${esc(r.name)}">${esc(r.name)}</small></td><td>${flag(r.region)}</td>
+      <td class="rig"><a href="https://www.miningrigrentals.com/rigs/${esc(r.id)}" target="_blank" rel="noopener">${esc(r.id)}</a>${m.best&&String(m.best.rig)===String(r.id)?' <span class="tag best" title="El que más TH·h da con tu saldo">más TH·h</span>':''}<small title="${esc(r.name)}">${esc(r.name)}</small></td><td>${flag(r.region)}</td>
       <td class="th1 ${r.adv_th>=50?'xl':r.adv_th>=15?'l':r.adv_th>=5?'m':'s'}">${fmtTh(r.adv_th)}</td>
       <td><canvas class="spark" data-rig="${esc(r.id)}" data-adv="${r.adv_th}"></canvas></td>
-      <td>${r.rpi.toFixed(0)}</td><td>${r.perf!=null?(r.perf*100).toFixed(0)+'%':'–'}</td>
+      <td class="pc ${pcls(r.rpi/100)}">${r.rpi.toFixed(0)}</td><td class="pc p24" id="p24-${esc(r.id)}">…</td><td class="pc ${pcls(r.perf)}">${r.perf!=null?(r.perf*100).toFixed(0)+'%':'–'}</td>
       <td class="mono" title="${esc(altOf(r.price_th_day))}">${units(r.price_th_day)}</td><td class="mono" title="${esc(altOf(r.hour_cost_total))}">${units(r.hour_cost_total)}</td><td>${r.minh}–${r.maxh} h</td>
       <td><div class="row" style="flex-wrap:nowrap"><input type="number" step="1" value="${Math.max(r.minh, Math.floor(r.afford_h))}" style="width:70px" id="rh-${esc(r.id)}"><button class="small primary" data-rent="${esc(r.id)}" data-name="${esc(r.name)}" data-hc="${r.hour_cost_total}" data-th="${r.adv_th}">Rentar</button></div></td></tr>`).join('');
     loadSparks();
@@ -517,10 +564,14 @@ let sparkRun = 0;
 async function loadSparks(){
   const run = ++sparkRun, cvs=[...document.querySelectorAll('canvas.spark')];
   const one = async cv=>{ if(run!==sparkRun) return;
-    try{ const g=await api('/api/rig-graph?id='+cv.dataset.rig); drawSpark(cv, g.th, parseFloat(cv.dataset.adv)); }
+    try{ const g=await api('/api/rig-graph?id='+cv.dataset.rig), adv=parseFloat(cv.dataset.adv); drawSpark(cv, g.th, adv);
+      const cell=document.getElementById('p24-'+cv.dataset.rig), vals=(g.th||[]).filter(v=>v!=null);
+      if(cell){ const r=vals.length&&adv?vals.reduce((s,v)=>s+v,0)/vals.length/adv:null; cell.textContent=r!=null?Math.round(r*100)+'%':'–'; cell.className='pc p24 '+pcls(r); } }
     catch(e){ cv.title='sin datos: '+e.message; } };
   for(let i=0;i<cvs.length;i+=4) await Promise.all(cvs.slice(i,i+4).map(one));
 }
+// Same thresholds and colours as the 24 h sparkline: >=90% green, >=70% yellow, below red.
+function pcls(r){ return r==null?'':r>=0.9?'pg':r>=0.7?'py':'pr'; }
 function drawSpark(cv, th, adv){
   const dpr=window.devicePixelRatio||1, W=150, H=34; cv.width=W*dpr; cv.height=H*dpr; const ctx=cv.getContext('2d'); ctx.scale(dpr,dpr);
   const vals=th.filter(v=>v!=null); if(!vals.length){ ctx.fillStyle='#4f5c7c'; ctx.font='10px Rajdhani'; ctx.fillText('sin datos',4,20); return; }
@@ -573,16 +624,34 @@ function auditLine(id){
 // Happy when the gateway gets more than both what was paid and what MRR reports, straight when
 // it is close to what was paid (within 5 %), sad when it gets less.
 // Remaining time, short: "34 h" under two days, "5,6 d" from then on.
-function fmtLeft(h){ return h<48 ? Math.max(0,Math.round(h))+' h' : (h/24).toFixed(1).replace('.',',')+' d'; }
-function face(x){
+function fmtLeft(h){ if(h<1) return Math.max(0,Math.round(h*60))+' min'; return h<48 ? Math.round(h)+' h' : (h/24).toFixed(1).replace('.',',')+' d'; }
+function face(x, ref){
+  ref = ref || 'MRR';
   const a=x.analysis; if(!a||a.delivered_th==null||!x.advertised_th) return '<svg class="face"></svg>';
   const d=a.delivered_th, paid=x.advertised_th, m=x.mrr_average_th||0;
   const mood = (d>paid && d>=m) ? 1 : d>=paid*0.95 ? 0 : -1;
   const col = mood>0?'#3cf59a':mood===0?'#ffd23f':'#ff3b5c';
   const mouth = mood>0?'M14 29 Q23 38 32 29':mood===0?'M15 31 L31 31':'M14 34 Q23 25 32 34';
-  const tip = mood>0?'Llega más de lo pagado y de lo que dice MRR':mood===0?'Llega más o menos lo pagado':'Llega menos de lo pagado';
+  const tip = mood>0?'Llega más de lo pagado y de lo que dice '+ref:mood===0?'Llega más o menos lo pagado':'Llega menos de lo pagado';
   return `<svg class="face" viewBox="0 0 46 46"><title>${tip} (${Math.round(d/paid*100)}%)</title><circle cx="23" cy="23" r="20" fill="none" stroke="${col}" stroke-width="2.6" style="filter:drop-shadow(0 0 6px ${col})"/>
     <circle cx="16" cy="18" r="2.6" fill="${col}"/><circle cx="30" cy="18" r="2.6" fill="${col}"/><path d="${mouth}" fill="none" stroke="${col}" stroke-width="2.6" stroke-linecap="round"/></svg>`;
+}
+// "alquilado a X u/TH/día · renovar a Y": Y green when it costs the same or less, amber when more.
+function priceLine(paid, renew, tipPaid, tipRenew, why){
+  if(paid==null && renew==null && !why) return '';
+  const u=esc(L().unit), n=v=>Math.round(v).toLocaleString('de-DE');   // 1.810: grouped also with 4 digits (es-ES does not)
+  const cls = (paid!=null && renew!=null) ? (renew<=paid*1.005?'pg':'py') : '';
+  return `<div class="vprice"><span title="${esc(tipPaid)}">alquilado a <b>${paid!=null?n(paid):'–'}</b> ${u}/TH/día</span>`
+    + ` · <span style="white-space:nowrap" title="${esc(tipRenew)}">${why?'renovar: no, '+esc(why):'renovar a <b class="'+cls+'">'+(renew!=null?n(renew):'—')+'</b>'}</span></div>`;
+}
+function mrrPrice(x){
+  const r=((state&&state.mrr&&state.mrr.rentals)||[]).find(y=>String(y.id)===String(x.id)); if(!r) return '';
+  const room=(x.max_h!=null&&x.length_h!=null)?Math.floor(parseFloat(x.max_h)-x.length_h):null;
+  const fee=(state.config&&state.config.fee_rate!=null)?Math.round(state.config.fee_rate*100):3;
+  return priceLine(r.paid_sat_th_day, r.renew_sat_th_day,
+    `Lo que pagaste (${r.paid} ${L().coin} + ${fee} % de comisión de MRR) entre ${r.advertised_th} TH/s × ${r.length_h} h`,
+    `Precio actual del rig en MRR por TH/día + ${fee} % de comisión de MRR (lo mismo que cobra Extender). Se consulta cada 10 min.`,
+    r.extensions===false?'el dueño no deja':(room!=null&&room<1)?'ya en el máximo':'');
 }
 // How long until no rental is left, and when the hashrate starts to drop.
 function runway(rs){
@@ -603,7 +672,7 @@ function renderAudit(){
   const shared=rs.length-ev.length;
   const mx=Math.max(c,m,d,1);
   const bar=(cls,lab,v)=>`<div class="vb ${cls}"><span>${lab}</span><div class="tr"><i style="width:${(v/mx*100).toFixed(1)}%"></i></div><b>${v.toFixed(1)} TH/s</b></div>`;
-  $('#cotejo').innerHTML = !rs.length ? '<div class="muted">sin rentas activas</div>' : `<div class="big3">
+  $('#cotejo').innerHTML = !rs.length ? '<div class="muted">sin rentas activas en MRR</div>'+pybCotejo(0) : `<div class="big3">
      <div><div class="muted" style="font-size:12px;letter-spacing:2px;text-transform:uppercase">llega al gateway</div>
        <div class="n" style="color:var(--accent2);text-shadow:0 0 14px rgba(247,147,26,.6)">${d.toFixed(1)} TH/s</div>
        <div class="muted">${c?(d/c*100).toFixed(1):'–'}% de lo pagado · ${m?(d/m*100).toFixed(1):'–'}% de lo que dice MRR</div></div>
@@ -611,30 +680,38 @@ function renderAudit(){
      <div>${bad?`<span class="verd short">${bad} corto${bad>1?'s':''}</span>`:'<span class="verd ok">ninguno corto</span>'}
        <span class="muted" style="margin-left:8px">${ev.length} medidos${shared?' · '+shared+' con worker compartido':''}</span>
        ${audit.sync&&audit.sync.error?'<div class="bad" style="margin-top:6px">MRR: '+esc(audit.sync.error)+'</div>':''}</div>
-     ${runway(rs)}</div>`;
+     ${runway(rs)}${pybCotejo(c)}</div>`;
   const mx2=Math.max(1,...rs.map(x=>Math.max(x.advertised_th,x.mrr_average_th||0,x.analysis?x.analysis.delivered_th:0)));
   const b2=(cls,lab,v,ex)=>`<div class="vb ${cls}"><span>${lab}</span><div class="tr"><i style="width:${((v||0)/mx2*100).toFixed(1)}%"></i></div><b>${v==null?'–':v.toFixed(2)}${ex||''}</b></div>`;
   rs.sort((p,q)=>q.advertised_th-p.advertised_th);
-  $('#v-title').textContent = rs.length===1 ? '1 alquiler' : rs.length+' alquileres';
+  $('#v-title').textContent = rentTitle(rs.length);
   $('#verdicts').innerHTML = rs.length? rs.map(x=>{ const a=x.analysis||{verdict:'none'};
     const got=a.delivered_th, pct=a.pct;
+    const isFav=x.rig_id!=null && favSet().has(String(x.rig_id));
+    const star=x.rig_id!=null?`<button class="star ${isFav?'on':''}" data-vfav="${esc(x.rig_id)}" data-name="${esc(x.rig_name||'')}" title="${isFav?'Quitar de favoritos':'Marcar como favorito'}">${isFav?'★':'☆'}</button>`:'';
     return `<div class="vrow"><div><a class="rn" href="https://www.miningrigrentals.com/rental/${esc(x.id)}" target="_blank" rel="noopener" title="Abrir el alquiler en MRR"><b>${esc(x.rig_name||'')}</b> ↗</a><div class="muted mono" style="font-size:11.5px">#${esc(x.id)}${a.worker?' · '+esc(a.worker):''}${a.worker?(a.connected?' · <span class="ok">● minando</span>':' · <span class="bad">● desconectado</span>'):''}</div>
       <div class="vexp"><span>esperado <b>${x.advertised_th.toFixed(2)} TH/s</b></span><span>recibido <b class="got">${got!=null?got.toFixed(2)+' TH/s':'–'}</b>${pct!=null?' <span class="muted">('+pct.toFixed(0)+'%)</span>':''}</span></div>
+      ${mrrPrice(x)}
       ${x.address?'<div class="addr" title="address a la que mina este alquiler">→ '+esc(x.address)+'</div>':''}
       ${a.partial?'<div class="muted" style="font-size:11.5px">medido desde '+new Date(a.observed_from*1000).toLocaleString([], {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+'</div>':''}
       ${(()=>{ const room=(x.max_h!=null&&x.length_h!=null)?Math.floor(parseFloat(x.max_h)-x.length_h):null;
          const why=!x.extensions?'El dueño del rig no permite extender':(room!=null&&room<1)?'Ya está en el máximo de horas del rig ('+x.max_h+' h)':'';
          return `<div class="row rw" style="margin-top:6px;flex-wrap:nowrap" title="${esc(why)}"><input type="number" step="1" min="1" ${room?'max="'+room+'"':''} value="${room?Math.min(24,room):24}" style="width:70px" id="vext-${esc(x.id)}" ${why?'disabled':''}><span class="muted">h</span>
         <button class="small primary" data-vext="${esc(x.id)}" ${why?'disabled':''}>Extender</button>${why?'<span class="muted" style="font-size:11.5px">'+esc(why)+'</span>':room!=null?'<span class="muted" style="font-size:11.5px">hasta '+room+' h más</span>':''}</div>`; })()}</div>
-      <div class="vmid"><div class="left ${(x.left_h||0)<6?'soon':''}" title="Tiempo que le queda a este alquiler"><b>${fmtLeft(x.left_h||0)}</b><span>quedan</span></div>${face(x)}<div class="vbars">${b2('c','pagado',x.advertised_th)}${b2('m','MRR dice',x.mrr_average_th)}${b2('d','gateway',a.delivered_th, a.rel_err_pct?' <span class="muted">±'+a.rel_err_pct.toFixed(0)+'%</span>':'')}</div></div>
+      <div class="vmid"><div class="left ${(x.left_h||0)<6?'soon':''}" title="Tiempo que le queda a este alquiler"><b>${fmtLeft(x.left_h||0)}</b><span>quedan</span></div><div class="vface">${face(x)}${star}</div><div class="vbars">${b2('c','pagado',x.advertised_th)}${b2('m','MRR dice',x.mrr_average_th)}${b2('d','gateway',a.delivered_th, a.rel_err_pct?' <span class="muted">±'+a.rel_err_pct.toFixed(0)+'%</span>':'')}</div></div>
       <div><span class="verd ${a.verdict}" title="${esc(VHELP[a.verdict]||'')}">${VTXT[a.verdict]||a.verdict}</span>${a.z!=null&&Math.abs(a.z)>audit.sigma?'<div class="muted mono" style="font-size:11px;margin-top:4px">'+Math.abs(a.z).toFixed(1)+' sigmas</div>':''}
         ${a.shares!=null?'<div class="muted mono" style="font-size:11px;margin-top:4px">'+a.shares.toLocaleString()+' / '+Math.round(a.expected_shares).toLocaleString()+' shares</div>':''}</div></div>`;}).join('')
     : '<div class="muted">sin rentas activas</div>';
+  $('#verdicts').querySelectorAll('button[data-vfav]').forEach(b=>b.onclick=async()=>{
+    try{ await api('/api/favorite',{rig:b.dataset.vfav,name:b.dataset.name,on:!b.classList.contains('on')}); await loadHistory(); renderAudit(); loadMarket(); }catch(e){ toast(e.message,true); } });
   $('#verdicts').querySelectorAll('button[data-vext]').forEach(b=>b.onclick=async()=>{
     const id=b.dataset.vext, hours=parseFloat($('#vext-'+id).value);
     try{
       const q = await api('/api/extend',{rental:id,hours,quote_only:true}); const c=q.quote||{};
-      if(!await confirmDlg(`<b>Extender alquiler #${id} ${hours} h</b><p>Coste: <b>${c.cost} ${esc(L().coin)}</b> (lo que cobra MRR ahora) · total tras extender: ${c.new_hrs} h</p><p class="muted">Solo se extiende si confirmas.</p>`)) return;
+      if(c.extensions===false){ toast('El dueño del rig no permite extender',true); return; }
+      if(c.room_h!=null && hours>c.room_h){ toast('Como mucho '+Math.floor(c.room_h)+' h más (máximo del rig)',true); return; }
+      const cost=c.cost_sats!=null?'≈ '+Math.round(c.cost_sats).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.')+' Spamsuits':'(MRR lo calcula al extender)';
+      if(!await confirmDlg(`<b>Extender alquiler #${id} ${hours} h</b><p>Coste: <b>${cost}</b> (precio actual del rig con la comisión de MRR; el cargo exacto lo hace MRR) · total tras extender: ${c.new_hrs} h</p><p class="muted">Solo se extiende si confirmas.</p>`)) return;
       const r = await api('/api/extend',{rental:id,hours}); toast(r.summary); refresh(true); loadAudit();
     }catch(e){ toast(e.message,true); }
   });
@@ -669,8 +746,10 @@ function drawChart2(){
   $('#chart2-legend').innerHTML=stack.slice().reverse().map(s=>`<span><i style="display:inline-block;width:12px;height:12px;background:${s.col};box-shadow:0 0 8px ${s.col};vertical-align:-2px;margin-right:6px"></i>${esc(s.name||s.w)} <span class="muted">${(S.series[s.w][n-1]||0).toFixed(1)} / ${s.th.toFixed(1)}</span></span>`).join('');
 }
 var hist=null;
+function favSet(){ return new Set(((hist&&hist.favorites)||[]).map(f=>String(f.rig_id))); }
 async function loadHistory(){
   try{ hist=await api('/api/history'); }catch(e){ return; }
+  if(typeof audit!=='undefined' && audit) renderAudit();
   const C=L().coin, H=hist.history||[];
   $('#hist-info').textContent = `últimos ${hist.history_days||7} días · ⭐ automático si cumple ≥${hist.favorite_pct||95}%`;
   $('#favs').innerHTML = (hist.favorites||[]).length ? '<span class="muted" style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase">Favoritos</span> '+hist.favorites.map(f=>
@@ -689,6 +768,169 @@ async function loadHistory(){
 async function loadAudit(){ try{ audit=await api('/api/audit'); renderAudit(); if(state) renderRentals(state.mrr); }catch(e){ const el=$('#cotejo'); if(el) el.textContent='auditoría no disponible: '+e.message; } }
 window.addEventListener('resize', drawChart2);
 loadAudit(); setInterval(loadAudit, 60000); setInterval(loadHistory, 300000);
+
+// ---------------------------------------------------------------- PyBLØCK (pyblock.py)
+let pyb=null, pybCatAt=null, pybSel={}, pybPayRef=null, pybPayTimer=null, pybCount=null, pybQR=null;
+const PAYM={ln:'⚡ LN '+'(SHA-256)', xbtln:'⚡ LN BLAKE2b (Laguz)', xbt:'on-chain BLAKE2b'};
+const PYB_FINAL=['completed','expired','cancelled','failed','not_found'];
+const pct = v => v==null ? '–' : (v>0?'+':'')+(v*100).toFixed(0)+' %';
+function pybLive(){ return ((pyb&&pyb.orders)||[]).filter(o=>o.live); }
+function rentTitle(n){ const k=pybLive().length; return (n===1?'1 alquiler':n+' alquileres')+' MRR'+(k?' + '+k+' PyBLØCK':''); }
+function pybCotejo(mrrTh){
+  const t=pyb&&pyb.totals; if(!t||!t.active) return '';
+  return `<div class="runway"><span class="tag pyb">PyBLØCK</span> ${t.active} activo${t.active>1?'s':''}: <b style="color:var(--pyb)">${t.th.toFixed(1)} TH/s</b> contratados · PyBLØCK dice ${t.live_ths.toFixed(1)} · gateway ${(t.delivered_th||t.gateway_th).toFixed(1)} TH/s
+    <div class="muted" style="margin-top:4px">Total alquilado: <b style="font-size:14px">${(mrrTh+t.th).toFixed(1)} TH/s</b> (MRR ${mrrTh.toFixed(1)} + PyBLØCK ${t.th.toFixed(1)})</div></div>`;
+}
+function stepOf(p, q){ return p.steps.find(s=>s.qty===q) || p.steps[0]; }
+function renderPyb(d){
+  pyb = d && d.enabled ? d : null;
+  $('#pyb-box').style.display = pyb ? '' : 'none';
+  if(!pyb){ ['#pyb-orders','#pyb-orders2'].forEach(s=>{ const e=$(s); if(e) e.innerHTML=''; }); return; }
+  // KPI: active rentals of both, labelled
+  const live=pybLive(), mr=(state&&state.mrr&&state.mrr.rentals)||[];
+  if(live.length){ $('#k-rentals').innerHTML = esc(mr.length)+' <span style="color:var(--pyb);font-size:.7em">+'+live.length+' PyBLØCK</span>';
+    $('#k-rentals-s').textContent = 'MRR '+mr.reduce((s,x)=>s+(x.advertised_th||0),0).toFixed(1)+' TH/s · PyBLØCK '+pyb.totals.th.toFixed(1)+' TH/s'; }
+  if(audit && audit.enabled) $('#v-title').textContent = rentTitle((audit.rentals||[]).length);
+  renderPybMarket();
+  const html = renderPybOrders();
+  $('#pyb-orders').innerHTML = html; const o2=$('#pyb-orders2'); if(o2) o2.innerHTML = html;
+  document.querySelectorAll('button[data-pybpay]').forEach(b=>b.onclick=()=>openPay(b.dataset.pybpay));
+  document.querySelectorAll('button[data-pybforget]').forEach(b=>b.onclick=async()=>{
+    if(!await confirmDlg('<b>Quitar este pedido de la lista</b><p class="muted">Solo se borra de este panel (y su identificador secreto con él).</p>')) return;
+    try{ await api('/api/pyblock/forget',{ref:b.dataset.pybforget}); refresh(); }catch(e){ toast(e.message,true); } });
+  const ab=$('#pyb-add'); if(ab && !ab.dataset.w){ ab.dataset.w=1; ab.onclick=async()=>{
+    const id=$('#pyb-add-id').value.trim(); if(!id){ toast('pega el id del pedido o su enlace',true); return; }
+    ab.disabled=true;
+    try{ const r=await api('/api/pyblock/add',{order:id, worker:$('#pyb-add-w').value.trim()});
+      $('#pyb-add-id').value=''; $('#pyb-add-w').value='';
+      toast('PyBLØCK: pedido añadido ('+(r.order.status_label||r.order.status)+')'); refresh(); }
+    catch(e){ toast(e.message,true); } finally{ ab.disabled=false; } }; }
+}
+function renderPybMarket(){
+  const cat=pyb.catalog, u=L().unit;
+  $('#pyb-where').innerHTML = pyb.gateway
+    ? `Mina a tu gateway <span class="mono">${esc(pyb.gateway)}</span>${pyb.backup?' (respaldo <span class="mono">'+esc(pyb.backup)+'</span>)':''} como <span class="mono">${esc(pyb.address||'¿?')}.pyb…</span> <span class="muted">(${esc(pyb.address_source)})</span>
+       <button class="small" id="pyb-gwtest" title="El mismo chequeo que hace PyBLØCK antes de aceptar un pedido (no crea nada)">Probar gateway</button> <span id="pyb-gwres">${gwRes(pyb.gateway_test)}</span>`
+    : '<span class="warn">Falta <span class="mono">pyblock.gateway</span> (host y port públicos de tu DATUM gateway) en config.json: sin eso no se puede pedir.</span>';
+  const t=$('#pyb-gwtest'); if(t) t.onclick=async()=>{ $('#pyb-gwres').textContent='probando…'; try{ $('#pyb-gwres').innerHTML=gwRes(await api('/api/pyblock/gateway-test?force=1')); }catch(e){ $('#pyb-gwres').innerHTML='<span class="bad">'+esc(e.message)+'</span>'; } };
+  if(!cat){ $('#pyb-info').textContent=''; $('#t-pyb tbody').innerHTML=`<tr><td colspan="10" class="bad">${esc(pyb.error||'catálogo no disponible')}</td></tr>`; return; }
+  $('#pyb-info').textContent = (pyb.error?pyb.error+' · ':'')+'límites '+(cat.limits.min_hours||'?')+'–'+(cat.limits.max_hours||'?')+' h · máx '+(cat.limits.max_order_th||'?')+' TH/pedido · '+new Date(cat.at*1000).toLocaleTimeString();
+  $('#pyb-promo').innerHTML = cat.promo ? `<span class="promo">−${esc(cat.promo.discount_pct)} %${cat.promo.until?' hasta '+new Date(cat.promo.until*1000).toLocaleString([], {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</span>` : '';
+  document.querySelectorAll('.pyb-unit-tot').forEach(e=>e.textContent=u); document.querySelectorAll('.pyb-unit-day').forEach(e=>e.textContent=u+'/TH/día');
+  if(pybCatAt===cat.at+'/'+cat.mrr_ref && $('#t-pyb tbody').children.length) return;   // keep the user's selections
+  pybCatAt=cat.at+'/'+cat.mrr_ref;
+  const pays=cat.pay_methods;
+  $('#t-pyb tbody').innerHTML = cat.packages.map(p=>{
+    const sel=pybSel[p.id]||(pybSel[p.id]={qty:1,pay:pays[0]}), st=stepOf(p, sel.qty);
+    return `<tr class="${p.available?'':'muted'}" data-pid="${esc(p.id)}">
+      <td class="mono">${esc(p.id)}</td><td class="th1 ${p.unit_th>=50?'xl':p.unit_th>=15?'l':p.unit_th>=5?'m':'s'}">${fmtTh(p.unit_th)}</td><td>${p.hours} h</td>
+      <td><select data-q="${esc(p.id)}" ${p.available?'':'disabled'}>${p.steps.map(s=>`<option value="${s.qty}" ${s.qty===sel.qty?'selected':''}>${s.qty}</option>`).join('')}</select></td>
+      <td class="c-th">${fmtTh(st.th)}</td><td class="mono c-tot" title="${esc(altOf(st.total_sats/1e8))}">${st.total_sats.toLocaleString()}</td>
+      <td class="mono c-day">${st.sat_th_day!=null?Math.round(st.sat_th_day).toLocaleString():'–'}</td>
+      <td class="pc c-vs ${st.vs_mrr==null?'':st.vs_mrr<=0?'pg':st.vs_mrr<=0.1?'py':'pr'}" title="MRR: ${cat.mrr_ref?Math.round(cat.mrr_ref).toLocaleString()+' '+esc(u)+'/TH/día':'sin dato'}">${pct(st.vs_mrr)}</td>
+      <td><select data-pay="${esc(p.id)}" ${p.available?'':'disabled'}>${pays.map(m=>`<option value="${esc(m)}" ${m===sel.pay?'selected':''}>${esc(PAYM[m]||m)}</option>`).join('')}</select></td>
+      <td>${p.available?`<button class="small pybbtn" data-pybrent="${esc(p.id)}" ${pyb.gateway?'':'disabled'}>Alquilar</button>`:'<span class="muted">agotado</span>'}</td></tr>`; }).join('')
+    || '<tr><td colspan="10" class="muted">PyBLØCK no tiene paquetes ahora mismo</td></tr>';
+  $('#t-pyb tbody').querySelectorAll('select[data-q]').forEach(e=>e.onchange=()=>{ const p=cat.packages.find(x=>x.id===e.dataset.q); pybSel[p.id].qty=parseInt(e.value);
+    const st=stepOf(p,pybSel[p.id].qty), tr=e.closest('tr');
+    tr.querySelector('.c-th').textContent=fmtTh(st.th); tr.querySelector('.c-tot').textContent=st.total_sats.toLocaleString();
+    tr.querySelector('.c-day').textContent=st.sat_th_day!=null?Math.round(st.sat_th_day).toLocaleString():'–';
+    const v=tr.querySelector('.c-vs'); v.textContent=pct(st.vs_mrr); v.className='pc c-vs '+(st.vs_mrr==null?'':st.vs_mrr<=0?'pg':st.vs_mrr<=0.1?'py':'pr'); });
+  $('#t-pyb tbody').querySelectorAll('select[data-pay]').forEach(e=>e.onchange=()=>{ pybSel[e.dataset.pay].pay=e.value; });
+  $('#t-pyb tbody').querySelectorAll('button[data-pybrent]').forEach(b=>b.onclick=()=>pybRent(cat.packages.find(x=>x.id===b.dataset.pybrent)));
+}
+function gwRes(r){ if(!r) return ''; return r.ok ? '<span class="ok">✓ PyBLØCK acepta el gateway</span>' : '<span class="bad">✗ '+esc(r.error||'no pasa el chequeo')+'</span>'; }
+function newNonce(){ const a=new Uint8Array(16); crypto.getRandomValues(a); return 'mcc-'+[...a].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+async function pybRent(p){
+  const sel=pybSel[p.id], st=stepOf(p, sel.qty), u=L().unit, cat=pyb.catalog;
+  if(!await confirmDlg(`<b><span class="tag pyb">PyBLØCK</span> Alquilar ${sel.qty}× ${esc(p.id)}</b>
+    <p>${fmtTh(st.th)} durante <b>${p.hours} h</b> = ${(st.th*p.hours).toFixed(0)} TH·h<br>
+    Total: <b>${st.total_sats.toLocaleString()} ${esc(u)}</b>${altOf(st.total_sats/1e8)?' <span class="muted">≈ '+esc(altOf(st.total_sats/1e8))+'</span>':''} · ${st.sat_th_day!=null?Math.round(st.sat_th_day).toLocaleString():'–'} ${esc(u)}/TH/día (${pct(st.vs_mrr)} vs MRR)${cat.promo?' · promo −'+esc(cat.promo.discount_pct)+' % ya incluida':''}<br>
+    Pago: <b>${esc(PAYM[sel.pay]||sel.pay)}</b></p>
+    <p>Gateway: <span class="mono">${esc(pyb.gateway)}</span>${pyb.backup?' · respaldo <span class="mono">'+esc(pyb.backup)+'</span>':''}<br>Cobro: <span class="mono" style="word-break:break-all">${esc(pyb.address)}</span>.pyb… <span class="muted">(${esc(pyb.address_source)})</span></p>
+    <p class="muted">PyBLØCK comprueba el gateway y devuelve una factura que caduca enseguida: la pagas tú desde tu wallet. Sin reembolsos. Solo se pide si confirmas.</p>`)) return;
+  const body={package:p.id, qty:sel.qty, pay:sel.pay, client_nonce:newNonce()};   // same nonce on every retry = same order
+  for(;;){
+    let r, j;
+    try{ r=await fetch('/api/pyblock/order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); j=await r.json(); }
+    catch(e){ j={ok:false,error:'sin respuesta del panel: '+e.message,retryable:true}; }
+    if(j.ok){ toast('PyBLØCK: pedido creado; paga la factura'); refresh(); openPay(j.order.ref, j.order); return; }
+    if(!j.retryable){ await confirmDlg(`<b class="bad">PyBLØCK no ha aceptado el pedido</b><p>${esc(j.error||'error')}</p><p class="muted">No se ha creado nada.</p>`); return; }
+    if(!await confirmDlg(`<b class="warn">No se pudo completar el pedido</b><p>${esc(j.error||'error')}</p><p class="muted">Reintentar usa el mismo identificador de pedido: PyBLØCK no lo duplica.</p>`)) { refresh(); return; }
+  }
+}
+function renderPybOrders(){
+  const os=(pyb.orders||[]).filter(o=>!PYB_FINAL.includes(o.status) || (Date.now()/1000-Math.max(o.created||0,o.added||0))<86400*3);
+  if(!os.length) return '';
+  const gw=o=>o.analysis&&o.analysis.delivered_th!=null ? o.analysis.delivered_th : o.gateway_th;
+  const mx=Math.max(1,...os.map(o=>Math.max(o.th||0,o.live_ths||0,gw(o)||0)));
+  const b=(cls,lab,v,ex,tip)=>`<div class="vb ${cls}"${tip?' title="'+esc(tip)+'"':''}><span>${lab}</span><div class="tr"><i style="width:${((v||0)/mx*100).toFixed(1)}%"></i></div><b>${v==null?'–':v.toFixed(2)}${ex||''}</b></div>`;
+  return os.map(o=>{
+    const when=new Date(o.created*1000).toLocaleString([], {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    const name=o.external?'pedido externo':o.qty+'× '+esc(o.package);
+    const ext=o.external?' <span class="tag ext" title="Hecho fuera del panel (web o app de PyBLØCK) y añadido aquí">externo</span>':'';
+    if(o.unpaid) return `<div class="vrow pyb dim"><div><span class="tag pyb">PyBLØCK</span>${ext} <b>${name}</b> · ${(o.th||0).toFixed(2)} TH/s × ${o.hours} h · ${(o.total_sats||0).toLocaleString()} ${esc(L().unit)}
+        <div class="muted mono" style="font-size:11.5px">${when} · ${esc(PAYM[o.pay]||o.pay)}</div></div>
+      <div><span class="verd unpaid" title="La factura caducó sin pagarse: no hubo alquiler">${esc(o.status_label)}</span>
+        <div class="row" style="margin-top:6px"><button class="small" data-pybforget="${esc(o.ref)}">Quitar</button></div></div></div>`;
+    const pend=o.status==='pending_payment'||o.status==='draft', fin=PYB_FINAL.includes(o.status);
+    const vcls=o.live?'ok':pend?'pend':o.status==='completed'?'ok':fin?'short':'starting';
+    const a=o.analysis;
+    // the same face as MRR's: gateway (measured on our worker) vs contracted and vs what PyBLØCK says
+    const fc=o.live?face({advertised_th:o.th, mrr_average_th:o.live_ths, analysis:a&&a.delivered_th!=null?a:null}, 'PyBLØCK')+(a&&a.approx?'<span class="muted" title="Medido por dirección: aproximado">≈</span>':''):'';
+    const wline=o.match==='address'?'<span class="warn" title="Conexiones de PyBLØCK que pagan a esta dirección'+((o.address_workers||[]).length?' ('+esc(o.address_workers.join(', '))+')':'')+', sin los workers de otros pedidos ni los de MRR. No es una medida exacta de este pedido.">sin worker propio: medido por dirección</span>'
+      : o.match==='none'?'<span class="warn">sin worker ni dirección: no se puede medir en el gateway</span>' : esc(o.worker);
+    const fav=a&&a.pct!=null&&['ok','over'].includes(a.verdict)&&a.pct>=((hist&&hist.favorite_pct)||95);
+    const star=o.live&&a?`<span class="star fixed ${fav?'on':''}" title="${fav?'Cumple: llega al menos el '+((hist&&hist.favorite_pct)||95)+' % de lo contratado':'Aún no llega el '+((hist&&hist.favorite_pct)||95)+' % de lo contratado (o no hay muestras suficientes)'}">${fav?'★':'☆'}</span>`:'';
+    return `<div class="vrow pyb"><div><span class="tag pyb">PyBLØCK</span>${ext} <b>${name}</b>
+        <div class="muted mono" style="font-size:11.5px">${wline} · ${when} · ${esc(PAYM[o.pay]||o.pay)}</div>
+        <div class="vexp"><span>contratado <b>${(o.th||0).toFixed(2)} TH/s</b> × ${o.hours} h</span><span>${(o.total_sats||0).toLocaleString()} ${esc(L().unit)}</span></div>
+        ${priceLine(o.sat_th_day, o.renew_sat_th_day, 'Lo que pagaste ('+(o.total_sats||0).toLocaleString()+' '+L().unit+') entre '+(o.th||0)+' TH/s × '+o.hours+' h',
+          'El paquete más barato que PyBLØCK vende ahora con las mismas TH/s por unidad, horas y unidades ('+(o.renew_sat_th_day==null?'ahora no hay ninguno':'precio final, sin comisión aparte')+')')}
+        <div class="addr">→ ${esc(o.address||'¿?')}${o.gateway?' · '+esc(o.gateway):''}</div>
+        ${o.error?'<div class="warn" style="font-size:12px">'+esc(o.error)+'</div>':''}</div>
+      <div class="vmid"><div class="left ${(o.left_h!=null&&o.left_h<6)?'soon':''}" title="Tiempo que le queda (según PyBLØCK)"><b>${o.left_h!=null?fmtLeft(o.left_h):'–'}</b><span>quedan</span></div>
+        ${o.live?'<div class="vface">'+fc+star+'</div>':''}
+        <div class="vbars">${b('c','contratado',o.th)}${b('p','PyBLØCK',o.live_ths)}${b('d','gateway',gw(o), a&&a.rel_err_pct?' <span class="muted">±'+a.rel_err_pct.toFixed(0)+'%</span>':'',
+          a?(a.approx?'Aproximado: shares de las conexiones de PyBLØCK a esta dirección ('+(o.address_workers||[]).join(', ')+') desde el inicio':'Medido en el gateway por shares del worker '+(o.worker||'')+' desde el inicio')+' · ahora mismo '+(o.gateway_th||0).toFixed(2)+' TH/s':'Lo que marca el gateway ahora mismo')}</div></div>
+      <div><span class="verd ${vcls}">${esc(o.status_label||o.status)}</span>${a&&o.live?' <span class="verd '+a.verdict+'" title="'+esc(VHELP[a.verdict]||'')+'">'+(VTXT[a.verdict]||a.verdict)+'</span>':''}${a&&o.live&&a.z!=null&&audit&&Math.abs(a.z)>audit.sigma?'<div class="muted mono" style="font-size:11px;margin-top:4px">'+Math.abs(a.z).toFixed(1)+' sigmas</div>':''}${o.percent_done!=null&&o.live?'<div class="muted mono" style="font-size:11px;margin-top:4px">'+o.percent_done.toFixed(1)+' % entregado</div>':''}
+        <div class="row" style="margin-top:6px">${pend&&o.payment&&o.sent?`<button class="small pybbtn" data-pybpay="${esc(o.ref)}">Pagar</button>`:''}
+        ${o.has_link?`<a class="small" href="/api/pyblock/open?ref=${encodeURIComponent(o.ref)}" target="_blank" rel="noopener noreferrer">ver en PyBLØCK ↗</a>`:''}
+        ${(fin||!o.sent||o.external)?`<button class="small" data-pybforget="${esc(o.ref)}"${o.external&&!fin?' title="Deja de seguirlo en el panel (en PyBLØCK sigue igual)"':''}>Quitar</button>`:''}</div></div></div>`; }).join('');
+}
+function loadQR(){ return window.QRious ? Promise.resolve() : new Promise((ok,ko)=>{ const s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js'; s.onload=ok; s.onerror=ko; document.head.appendChild(s); }); }
+function openPay(ref, order){
+  pybPayRef=ref; const d=$('#pyb-dlg'); if(!d.open) d.showModal();
+  drawPay(order || ((pyb&&pyb.orders)||[]).find(o=>o.ref===ref));
+  clearInterval(pybPayTimer); pybPayTimer=setInterval(async()=>{
+    if(!$('#pyb-dlg').open){ clearInterval(pybPayTimer); return; }
+    try{ const r=await api('/api/pyblock/refresh',{ref}); drawPay(r.order); if(r.order.status!=='pending_payment'){ clearInterval(pybPayTimer); refresh(); } }catch(e){}
+  }, 10000);
+}
+$('#pyb-dlg-close').onclick=()=>{ $('#pyb-dlg').close(); clearInterval(pybPayTimer); clearInterval(pybCount); };
+function drawPay(o){
+  const el=$('#pyb-pay'); if(!o){ el.innerHTML='<div class="muted">pedido no encontrado</div>'; return; }
+  const pay=o.payment||{}, head=`<b><span class="tag pyb">PyBLØCK</span> ${o.qty}× ${esc(o.package)} · ${(o.th||0).toFixed(2)} TH/s × ${o.hours} h</b>`;
+  clearInterval(pybCount);
+  if(o.status!=='pending_payment'){ el.innerHTML=head+`<p style="margin-top:14px"><span class="verd ${o.live?'ok':PYB_FINAL.includes(o.status)?'short':'starting'}">${esc(o.status_label||o.status)}</span></p>`+(o.live?'<p class="ok">Pagado: el hashrate va hacia tu gateway.</p>':''); return; }
+  const isX = !pay.invoice && pay.xbt_address;
+  const amount = isX || o.pay==='xbtln' ? (pay.xbt_amount!=null?esc(pay.xbt_amount)+' BTC (BLAKE2b)':'') : (o.total_sats||0).toLocaleString()+' '+esc(L().unit);
+  const code = isX ? pay.xbt_address : pay.invoice;
+  el.innerHTML = head+`<p class="muted" style="margin:6px 0 0">${isX?'Envía <b>exactamente</b> esta cantidad a esta dirección (la cantidad identifica el pedido)':'Paga esta factura desde tu wallet'} · ${esc(PAYM[o.pay]||o.pay)}</p>
+    <canvas id="pyb-qr"></canvas><div class="inv" id="pyb-inv" title="Clic para copiar">${esc(code||'sin datos de pago')}</div>
+    <div><b style="font-size:16px">${amount}</b> · caduca en <b id="pyb-exp">–</b></div>
+    <div class="row" style="justify-content:center;margin-top:8px"><button class="small" id="pyb-copy">Copiar ${isX?'dirección':'factura'}</button>${isX&&pay.xbt_amount!=null?'<button class="small" id="pyb-copyamt">Copiar cantidad</button>':''}</div>
+    <div class="muted" style="font-size:12px;margin-top:8px">Se comprueba cada 10 s. ${pay.xbt_seen?'<span class="ok">Pago visto, esperando confirmaciones ('+esc(pay.xbt_confs||0)+'/'+esc(pay.xbt_confs_needed||'?')+')</span>':''}</div>`;
+  const copy=t=>navigator.clipboard.writeText(t).then(()=>toast('Copiado'),()=>toast('No se pudo copiar',true));
+  $('#pyb-copy').onclick=$('#pyb-inv').onclick=()=>code&&copy(code);
+  const ca=$('#pyb-copyamt'); if(ca) ca.onclick=()=>copy(String(pay.xbt_amount));
+  if(code) loadQR().then(()=>{ new QRious({element:$('#pyb-qr'), size:230, value:isX?code:'lightning:'+code}); }).catch(()=>{ $('#pyb-qr').style.display='none'; });
+  else $('#pyb-qr').style.display='none';
+  const tick=()=>{ const e=$('#pyb-exp'); if(!e) return; if(!pay.expires_at){ e.textContent='?'; return; }
+    const s=Math.max(0,Math.round(pay.expires_at-Date.now()/1000)); e.textContent=s>=60?Math.floor(s/60)+'m '+(s%60)+'s':s+'s'; e.className=s<60?'bad':''; };
+  tick(); pybCount=setInterval(tick,1000);
+}
 </script>
 </body>
 </html>

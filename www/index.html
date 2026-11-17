@@ -215,6 +215,9 @@ body.nobot #hashcard{grid-column:span 12}
 .big3{display:grid;gap:12px}
 .big3 .n{font:700 26px var(--display);letter-spacing:1px}
 @media(max-width:700px){.vrow{grid-template-columns:1fr}}
+  tr.rejected td{opacity:.6} tr.rejected:hover td{opacity:1}
+  .tag.rej{background:rgba(255,59,92,.15);color:#ff8095;border:1px solid rgba(255,59,92,.4)}
+  tr.sep td{color:#ff8095;font-size:.85em;padding-top:14px;border-top:1px dashed rgba(255,59,92,.4)}
 </style>
 </head>
 <body>
@@ -538,14 +541,18 @@ async function loadMarket(){
     const C=L().coin;
     $('#mkt-best').innerHTML = m.best ? `Saldo para alquilar: <b>${fmtBtc(m.budget)} ${esc(C)}</b>. Lo que más TH·h da ahora: <b>${esc(m.best.name)}</b> ${m.best.adv_th.toFixed(2)} TH × ${m.best.hours.toFixed(1)} h por ${fmtBtc(m.best.cost)} ${esc(C)} (fee incluida)` : `Con ${fmtBtc(m.budget)} ${esc(C)} no alcanza el mínimo de ningún rig usable.`;
     const favs=new Set(((hist&&hist.favorites)||[]).map(f=>String(f.rig_id))), onlyFav=$('#only-fav').checked;
-    $('#t-market tbody').innerHTML = m.rigs.filter(r=>!onlyFav||favs.has(String(r.id))).map(r=>`<tr class="${r.affordable?'':'muted'} ${favs.has(String(r.id))?'fav':''} ${m.best&&String(m.best.rig)===String(r.id)?'best':''}">
+    const rowHtml = r=>`<tr class="${r.reason?'rejected ':''}${r.affordable?'':'muted'} ${favs.has(String(r.id))?'fav':''} ${m.best&&String(m.best.rig)===String(r.id)?'best':''}">
       <td><button class="star ${favs.has(String(r.id))?'on':''}" data-fav="${esc(r.id)}" data-name="${esc(r.name)}" title="${favs.has(String(r.id))?'Quitar de favoritos':'Marcar como favorito'}">${favs.has(String(r.id))?'★':'☆'}</button></td>
-      <td class="rig"><a href="https://www.miningrigrentals.com/rigs/${esc(r.id)}" target="_blank" rel="noopener">${esc(r.id)}</a>${m.best&&String(m.best.rig)===String(r.id)?' <span class="tag best" title="El que más TH·h da con tu saldo">más TH·h</span>':''}<small title="${esc(r.name)}">${esc(r.name)}</small></td><td>${flag(r.region)}</td>
+      <td class="rig"><a href="https://www.miningrigrentals.com/rigs/${esc(r.id)}" target="_blank" rel="noopener">${esc(r.id)}</a>${m.best&&String(m.best.rig)===String(r.id)?' <span class="tag best" title="El que más TH·h da con tu saldo">más TH·h</span>':''}${r.reason?` <span class="tag rej" title="Descartado por el filtro; puedes alquilarlo igual">${esc(r.reason)}</span>`:''}<small title="${esc(r.name)}">${esc(r.name)}</small></td><td>${flag(r.region)}</td>
       <td class="th1 ${r.adv_th>=50?'xl':r.adv_th>=15?'l':r.adv_th>=5?'m':'s'}">${fmtTh(r.adv_th)}</td>
       <td><canvas class="spark" data-rig="${esc(r.id)}" data-adv="${r.adv_th}"></canvas></td>
       <td class="pc ${pcls(r.rpi/100)}">${r.rpi.toFixed(0)}</td><td class="pc p24" id="p24-${esc(r.id)}">…</td><td class="pc ${pcls(r.perf)}">${r.perf!=null?(r.perf*100).toFixed(0)+'%':'–'}</td>
       <td class="mono" title="${esc(altOf(r.price_th_day))}">${units(r.price_th_day)}</td><td class="mono" title="${esc(altOf(r.hour_cost_total))}">${units(r.hour_cost_total)}</td><td>${r.minh}–${r.maxh} h</td>
-      <td><div class="row" style="flex-wrap:nowrap"><input type="number" step="1" value="${Math.max(r.minh, Math.floor(r.afford_h))}" style="width:70px" id="rh-${esc(r.id)}"><button class="small primary" data-rent="${esc(r.id)}" data-name="${esc(r.name)}" data-hc="${r.hour_cost_total}" data-th="${r.adv_th}">Rentar</button></div></td></tr>`).join('');
+      <td><div class="row" style="flex-wrap:nowrap"><input type="number" step="1" value="${Math.max(r.minh, Math.floor(r.afford_h))}" style="width:70px" id="rh-${esc(r.id)}"><button class="small primary" data-rent="${esc(r.id)}" data-name="${esc(r.name)}" data-hc="${r.hour_cost_total}" data-th="${r.adv_th}">Rentar</button></div></td></tr>`;
+    const keep = r=>!onlyFav||favs.has(String(r.id));
+    const rej=(m.rejected||[]).filter(keep);
+    $('#t-market tbody').innerHTML = m.rigs.filter(keep).map(rowHtml).join('')
+      + (rej.length ? `<tr class="sep"><td colspan="13">Descartados por los filtros (${rej.length}): se pueden alquilar igual, mira el motivo</td></tr>` + rej.map(rowHtml).join('') : '');
     loadSparks();
     $('#t-market tbody').querySelectorAll('button[data-fav]').forEach(b=>b.onclick=async()=>{
       try{ await api('/api/favorite',{rig:b.dataset.fav,name:b.dataset.name,on:!b.classList.contains('on')}); await loadHistory(); loadMarket(); }catch(e){ toast(e.message,true); } });

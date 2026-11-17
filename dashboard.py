@@ -487,7 +487,8 @@ def market_view(budget=None):
     api = mrr_api(c)
     confirmed, _ = api.balance(c["currency"])
     market = float(api.algo_stats(c["algo"])["stats"]["prices"]["last_10"]["amount"])
-    cands = mrr_bot.candidate_rigs(c, api.rigs(c["algo"]), market)
+    rejected = []
+    cands = mrr_bot.candidate_rigs(c, api.rigs(c["algo"]), market, rejected)
     budget = budget if budget is not None else max(0.0, confirmed - c["reserve_btc"])
     fee = 1 + c["fee_rate"]
     rows = []
@@ -508,8 +509,14 @@ def market_view(budget=None):
             rows.append(dict(b, afford_h=round(h, 1), afford_thh=round(h * b["adv_th"]),
                              sat_th_day=round(b["price_th_day"] * 1e8),
                              affordable=h >= b["minh"], hour_cost_total=b["hour_cost"] * fee))
+    rej = []
+    for x in rejected[:40]:
+        hours = min(x["maxh"], budget / (x["hour_cost"] * fee)) if budget > 0 else 0
+        rej.append(dict(x, afford_h=round(hours, 1), afford_thh=round(hours * x["adv_th"]),
+                        sat_th_day=round(x["price_th_day"] * 1e8),
+                        affordable=hours >= x["minh"], hour_cost_total=x["hour_cost"] * fee))
     mrr_bot.save_state(api.state)
-    return {"budget": budget, "market": market, "rigs": rows, "best": best, "at": time.time()}
+    return {"budget": budget, "market": market, "rigs": rows, "rejected": rej, "best": best, "at": time.time()}
 
 
 def plan_view():

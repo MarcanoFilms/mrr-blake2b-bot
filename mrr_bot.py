@@ -210,49 +210,58 @@ def telegram(cfg, text):
 
 
 # ----------------------------------------------------------------------------- analysis
-def candidate_rigs(cfg, rigs, market_price):
+def candidate_rigs(cfg, rigs, market_price, rejected=None):
+    """Usable rigs, cheapest first. If [rejected] is a list, the available+online rigs that a
+    filter drops are appended to it with the reason (the dashboard shows them apart, 17 nov 2026)."""
     cur = cfg["currency"]
     out = []
     for r in rigs:
         p = (r.get("price") or {}).get(cur) or {}
         st = r.get("status") or {}
         if not p.get("enabled") or st.get("status") != "available" or not r.get("online"):
-            continue
-        if str(r["id"]) in map(str, cfg["excluded_rigs"]) or r.get("region") in cfg["excluded_regions"]:
-            continue
+            continue   # not rentable at all: never listed
+        info = {"id": str(r["id"]), "name": r["name"], "region": r.get("region")}
         try:
             rpi = float(r.get("rpi") or 0)
         except (TypeError, ValueError):   # "new" = no rental history yet
             rpi = -1.0
-        if rpi < 0 and not cfg.get("allow_new_rigs"):
-            continue
-        if 0 <= rpi < cfg["min_rpi"]:
-            continue
+        info["rpi"] = rpi
         adv = to_th(r["hashrate"]["advertised"])
-        if adv <= 0:
-            continue
-        price = float(p["price"])                       # per unit per day
+        price = float(p.get("price") or 0)              # per unit per day
         unit = (r["price"].get("type") or "th").lower()
         price_th_day = price / UNIT.get(unit, 1.0)      # normalise to BTC per TH per day
-        if market_price and price_th_day > market_price * cfg["max_price_premium"]:
-            continue
-        hour_cost = float(p["hour"]) if p.get("hour") else price * float(r["hashrate"]["advertised"]["hash"]) / 24
-        if hour_cost <= 0:
-            continue
+        hour_cost = float(p["hour"]) if p.get("hour") else (price * float(r["hashrate"]["advertised"]["hash"]) / 24 if adv > 0 else 0)
         recent = to_th(r["hashrate"].get("last_30min"))
-        perf = recent / adv if recent > 0 else None
-        if perf is not None and perf < cfg["min_perf_ratio"]:
-            continue
+        perf = recent / adv if recent > 0 and adv > 0 else None
         minh = max(float(r.get("minhours") or 0), float(p.get("min_rental_length") or 0), cfg["min_hours"])
         maxh = min(float(r.get("maxhours") or cfg["max_hours"]), cfg["max_hours"])
-        if maxh < minh:
+        info.update({"adv_th": adv, "perf": perf, "price_th_day": price_th_day, "price_raw": price,
+                     "price_type": unit, "hour_cost": hour_cost, "minh": minh, "maxh": maxh})
+        reason = None
+        if str(r["id"]) in map(str, cfg["excluded_rigs"]) or r.get("region") in cfg["excluded_regions"]:
+            reason = "excluido en la configuración"
+        elif rpi < 0 and not cfg.get("allow_new_rigs"):
+            reason = "rig nuevo (sin historial de RPI)"
+        elif 0 <= rpi < cfg["min_rpi"]:
+            reason = f"RPI {rpi:.1f} < {cfg['min_rpi']:g}"
+        elif adv <= 0:
+            reason = "sin hashrate anunciado"
+        elif market_price and price_th_day > market_price * cfg["max_price_premium"]:
+            reason = f"caro: {price_th_day / market_price:.2f}× el mercado (máx. {cfg['max_price_premium']:g}×)"
+        elif hour_cost <= 0:
+            reason = "sin precio por hora"
+        elif perf is not None and perf < cfg["min_perf_ratio"]:
+            reason = f"rinde {perf * 100:.0f}% de lo anunciado (mín. {cfg['min_perf_ratio'] * 100:.0f}%)"
+        elif maxh < minh:
+            reason = f"horas incompatibles ({minh:g}–{maxh:g} h)"
+        if reason:
+            if rejected is not None and adv > 0 and hour_cost > 0:
+                rejected.append(dict(info, reason=reason))
             continue
-        out.append({
-            "id": str(r["id"]), "name": r["name"], "region": r.get("region"), "rpi": rpi,
-            "adv_th": adv, "perf": perf, "price_th_day": price_th_day, "price_raw": price,
-            "price_type": unit, "hour_cost": hour_cost, "minh": minh, "maxh": maxh,
-        })
+        out.append(info)
     out.sort(key=lambda c: (c["price_th_day"], -c["maxh"], -c["rpi"]))
+    if rejected is not None:
+        rejected.sort(key=lambda c: c["price_th_day"])
     return out
 
 

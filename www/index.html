@@ -200,6 +200,14 @@ canvas.spark{width:150px;height:34px;display:block}
 .switch i::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;background:#55658a;transition:.2s}
 .switch.on i{background:rgba(60,245,154,.15);border-color:var(--ok);box-shadow:0 0 12px rgba(60,245,154,.35)}
 .switch.on i::after{left:25px;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.botpower{display:flex;align-items:center;gap:12px;margin-bottom:12px;padding:10px 12px;border:1px solid var(--line2);background:rgba(10,14,24,.6)}
+.botpower.on{border-color:rgba(60,245,154,.5)}.botpower.off{border-color:rgba(255,210,63,.5)}
+.botpower .bp-txt{flex:1;font-size:12.5px;line-height:1.35;color:var(--muted)}.botpower .bp-txt b{display:block;font:700 14px var(--ui);letter-spacing:1px;text-transform:uppercase}
+.botpower.on .bp-txt b{color:var(--ok)}.botpower.off .bp-txt b{color:var(--warn)}
+button.power{min-width:132px;padding:10px 14px;font-size:13.5px;font-weight:700}
+button.power.on{background:linear-gradient(135deg,var(--ok),#1fae6a);border-color:transparent;color:#00140a}
+button.power.on:hover{box-shadow:0 0 18px rgba(60,245,154,.55);color:#000}
+#p-timer{cursor:pointer}
 details summary{list-style:none;cursor:pointer;font:600 11px var(--ui);letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
 details summary::before{content:"▸ ";color:var(--cyan)}details[open] summary::before{content:"▾ "}
 dialog{background:var(--panel2);color:var(--text);border:1px solid var(--line2);max-width:540px;padding:20px 22px;box-shadow:0 0 40px rgba(25,215,255,.15);
@@ -273,8 +281,9 @@ body.nobot #hashcard{grid-column:span 12}
   <section class="card span4 bot-ui"><i class="corner tr"></i><i class="corner bl"></i>
     <h2>Control del bot</h2>
     <div class="muted ro-note" style="display:none;margin-bottom:10px">Panel en modo <b>solo lectura</b> (<code>read_only</code> en config.json): no alquila, no extiende ni toca el bot.</div>
-    <div class="row" style="margin-bottom:10px">
-      <label class="switch" id="sw-timer" title="Timer systemd cada 15 min"><i></i><span id="sw-label">timer</span></label>
+    <div class="botpower rw" id="botpower">
+      <div class="bp-txt"><b id="bp-state">bot: …</b><span id="bp-desc"></span></div>
+      <button id="sw-timer" class="power" title="Enciende o apaga el timer systemd (una pasada cada 15 min)">…</button>
     </div>
     <div class="row" style="margin-bottom:10px">
       <button id="btn-run" class="primary">Ejecutar ahora</button>
@@ -496,7 +505,10 @@ function render(d){
     $('#k-mkt').title = alt ? '≈ '+alt+' por TH y día' : '';
   }
   // bot
-  const sw=$('#sw-timer'); sw.className='switch'+(bot.timer_enabled?' on':''); $('#sw-label').textContent = bot.timer_enabled?'timer activo (cada 15 min)':'timer apagado';
+  const sw=$('#sw-timer'); sw.className='power'+(bot.timer_enabled?' danger':' on'); sw.textContent = bot.timer_enabled?'⏻ Apagar bot':'⏻ Encender bot';
+  $('#botpower').className='botpower rw '+(bot.timer_enabled?'on':'off');
+  $('#bp-state').textContent = bot.timer_enabled?'Bot encendido · automático':'Bot apagado · modo manual';
+  $('#bp-desc').textContent = bot.timer_enabled?'Cada 15 min renta o extiende con el saldo de MRR.':'El saldo queda quieto: eliges tú el ASIC en el Mercado (botón Rentar).';
   $('#b-next').textContent = bot.next_run ? 'próxima pasada: '+bot.next_run : '';
   $('#b-last').textContent = bot.last_run ? 'última pasada: '+bot.last_run : '';
   $('#actions').textContent = (bot.actions||[]).slice().reverse().map(a=>a.at+'  '+(a.ok?'✓':'✗')+'  '+a.summary).join('\n') || 'sin acciones todavía';
@@ -650,7 +662,9 @@ async function refresh(force){ try{ render(await api('/api/overview'+(force?'?fo
 
 $('#sw-timer').onclick = async()=>{ const on=!state?.bot?.timer_enabled;
   if(on && !await confirmDlg('<b>Encender el bot</b><p>Cada 15 min gastará el saldo confirmado de MRR (hasta max_spend_per_run_btc por pasada) rentando o extendiendo rigs.</p>')) return;
+  if(!on && !await confirmDlg('<b>Apagar el bot</b><p>Deja de rentar y extender solo. Las rentas activas siguen hasta su fin; el saldo que deposites queda para que elijas tú el rig en el Mercado.</p>')) return;
   try{ const r=await api('/api/bot',{action:on?'enable':'disable'}); toast(on?'Bot encendido':'Bot apagado'); refresh(); }catch(e){ toast(e.message,true);} };
+$('#p-timer').onclick = ()=>{ if(!document.body.classList.contains('ro')) $('#sw-timer').click(); };
 $('#btn-run').onclick = async()=>{ if(!await confirmDlg('<b>Ejecutar una pasada ahora</b><p>El bot gastará si hay saldo y un rig que cumpla los filtros.</p>')) return;
   try{ await api('/api/bot',{action:'run'}); toast('Pasada lanzada; mira el historial/logs en unos segundos'); setTimeout(()=>{refresh(true); loadLogs();}, 8000);}catch(e){toast(e.message,true);} };
 $('#btn-plan').onclick = async()=>{ const p=$('#plan'); p.style.display='block'; p.textContent='calculando…'; try{ const r=await api('/api/plan'); p.textContent = r.log + (r.descriptions.length? '\nPLAN:\n  '+r.descriptions.join('\n  ') : '\nnada que hacer ahora'); }catch(e){ p.textContent='error: '+e.message; } };

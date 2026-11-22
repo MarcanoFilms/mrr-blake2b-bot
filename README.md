@@ -25,13 +25,38 @@ No dependencies beyond Python 3.10+ and the standard library.
 
 ![Overview](docs/img/overview.jpg)
 
+- **Every rental judged**: what you paid for, what MRR says it delivered and what your
+  gateway accepted, with a statistical verdict and a face that tells you at a glance.
+- **One worker per rental**, so rentals that all arrive through MRR's proxies can be told
+  apart, mining to a payout address you fix.
+- **Manual renting** from the market, with each rig's last 24 h of hashrate, its region,
+  prices per TH and day and per hour, and a confirmation before anything is spent.
+- **History and favourites**: finished rentals (MRR and PyBLØCK) are kept for 7 days with
+  their final verdict, can be deleted by hand, and rigs that delivered are starred
+  automatically.
+- **Tickets**: a rental that underdelivers gets an "Abrir ticket" button with the evidence
+  (paid vs MRR vs gateway) ready to paste, and an optional automatic notice.
+- **Other markets**: PyBLØCK packages and orders (also PyBLØCK market rentals made on
+  their web), renting on **P2Hash** (PyBLØCK's market on Nostr, paid per tranche only while
+  the hash arrives), and hashrate from other markets detected on the gateway.
+- **Gateway**: every ASIC connected to your DATUM gateway (address, worker, hashrate,
+  shares, kick button) and the gateway's log.
+
 | Rentals | History |
 |---|---|
 | ![Rentals](docs/img/rentals.jpg) | ![History](docs/img/history.jpg) |
 
 ![Market](docs/img/market.jpg)
 
-<p align="center"><img src="docs/img/login.jpg" width="520" alt="Login"></p>
+![P2Hash](docs/img/p2hash.jpg)
+
+| A P2Hash rental, a tranche waiting for the click | A detected rental without a worker, measured by address |
+|---|---|
+| ![P2Hash rental](docs/img/p2hash-rental.jpg) | ![Detected](docs/img/detected.jpg) |
+
+<sub>The P2Hash pictures show sample data (no P2Hash seller was listed when they were taken).</sub>
+
+<p align="center"><img src="docs/img/ticket.jpg" width="540" alt="Ticket text"> <img src="docs/img/login.jpg" width="420" alt="Login"></p>
 
 Screenshots have addresses, IPs, rental numbers and balances masked. They show the
 dashboard with `bot_ui` off; with the bot on there is one more card with its controls.
@@ -185,6 +210,119 @@ PyBLØCK reports, what the gateway sees for its worker, time left, state), in th
 TH/s totals and in `/api/overview` under `pyblock`. Created / paid / ended notices go to
 the same Telegram chat, without the order id or the invoice.
 
+### PyBLØCK market rentals made on their web
+
+PyBLØCK market (rigs listed by miners) is not the packages above: an order there is made
+on their web and identified by a secret. Paste its link (`…/market_minero.php?o=<secret>`)
+or the secret in **"Añadir orden de PyBLØCK"** and the panel reads `GET /orders/{secret}`:
+rigs, hours, total, the stratum user it mines with (so it is measured on that worker),
+status (`esperando_pago`, `activo`, `liquidado`, `vencido`) and the refund once settled.
+The secret stays in `pyblock.json`. Pasting only the miner's public id (`m·25f278f0`, shown
+next to each rig) follows that rig's current rental as an **estimate**: verified TH/s, the
+end and the list price from `/rigs`, measured by address.
+
+### P2Hash: renting per tranche over Nostr
+
+[P2Hash](https://b.pyblock.xyz:8443/p2hash.php) is PyBLØCK's peer-to-peer hashrate market:
+sellers run the [PyBLØCK Hashrate Agent](https://gitlab.com/astrolexis-group1/pyblock-hashrate-agent)
+next to the rig. The panel is a buyer that speaks the agent's protocol (`pyblock-hashrate/0`):
+
+1. listings are signed Nostr events (NIP-99, kind 30402) read from `p2hash.relays`; only
+   valid signatures, not expired, with a BOLT12 offer, a price in XBT/TH/day and a tranche
+   of at least 60 s are shown (pink box in the market card), with the price against MRR's;
+2. **Alquilar** (hours, confirmation) sends an encrypted request (NIP-17 gift wrap, its own
+   buyer key in `p2hash.json`) naming your public gateway and a worker of its own,
+   `<address>.p2h<6 hex>`; the seller checks the gateway and accepts;
+3. the seller asks for each tranche in advance (`due`); the panel pays the listing's offer
+   over the paying wallet connection (NWC `pay_offer`, or `pay` for wallets that use it)
+   and sends the preimage; the seller checks it in its wallet and sends the hash;
+4. the rental shows in the rentals card: the same face, verdict and bars as MRR's (gateway
+   measured by shares on its worker), the tranches paid with what the gateway saw in each
+   and what the seller reported, time left, next payment and a **Parar** button (tells the
+   seller, pays nothing more). Finished rentals go to the history.
+
+**Payments.** Nothing is paid unless you ask for it:
+
+- by default every tranche waits for your click (**Pagar tramo N**) within the seller's
+  grace period (a couple of minutes, counted down), and Kilobot tells you one is due; if
+  nobody pays, the seller sends the rig home;
+- paying tranches by themselves needs three things: the **pago automático** switch on, both
+  **caps** set (sats per rental and per 24 h; 0 = off, the default) and the box ticked when
+  renting. Switching it off during a rental makes the next tranche wait for you;
+- in both modes a tranche is paid only if it comes from the seller of the running rental,
+  is the next in order and was never paid, is for the listing's offer, asks no more than
+  the listing price (+1 %), stays within the hours bought and the caps, and, from the
+  second one on, the gateway measured at least `p2hash.min_pct` (50 %) of the advertised
+  hash since the previous payment. Otherwise it is not paid and the rental is cancelled:
+  your risk is one tranche;
+- a wallet that does not answer in time counts against the caps anyway (it may have paid);
+- the **paying connection** should be a separate app in your hub with *pay* and a budget:
+  the hub enforces the budget, and the panel reads it (`get_budget`, or `get_balance`)
+  and refuses a rental it could not finish paying. Paste its `nostr+walletconnect://` URI
+  in the box: it is written to `config.json` (600) and never shown again.
+
+A panel restart closes a running rental and tells the seller (it is not resumed).
+**Probar gateway** makes the seller's own check (stratum subscribe + authorize on your
+public host). Notices (accepted, tranche due, first payment, end) go to the Telegram chat.
+
+### Tickets for rentals that underdeliver
+
+MRR's API v2 has **no endpoint to open a support ticket, a dispute or a refund request**
+(checked against [the API docs](https://www.miningrigrentals.com/apidocv2) on 20 Nov 2026).
+Tickets are opened on MRR's site, from the rental's page or the ticket centre, and MRR's
+[refund policy](https://www.miningrigrentals.com/helpcenter/For-Renters/35) reviews partial
+delivery once the rental has ended, within 12 hours of the end; during a rental it asks
+renters to contact the rig owner first. What the API does have is the rental's message
+thread (`PUT /rental/<id>/message`), which the owner and MRR support read.
+
+So the dashboard does this:
+
+- **"Abrir ticket"** on every active rental with the sad face (below 95 % of what was paid,
+  3 sigmas short) and on finished ones while MRR's 12-hour window is open (the button
+  counts it down). It shows the evidence in English (advertised TH/s, what MRR reports,
+  what the gateway accepted from the rental's own worker, shares against expected,
+  window), copies it and opens the rental on MRR, where its ticket button is.
+- **"ticket automático al terminar"** (off by default, a switch above the rentals) follows
+  MRR's policy: it looks at an MRR rental only once it has **ended**, inside the 12-hour
+  window, `audit.tickets.after_end_h` (8.5 h) after the end, because MRR reviews short
+  rentals itself and its automatic refunds arrive at the end or 7.5–8.7 hours later. It
+  flags the rental when the final delivery is below `max_pct` (100 %) **beyond statistical
+  noise**: shares arrive as a Poisson process, so a rig that delivered exactly what was paid
+  is measured within about 1/√(expected shares); the notice needs the shortfall to exceed
+  `sigma` (3) of those deviations (a rig that delivered in full is wrongly flagged about
+  once in 700 rentals) and at least `min_expected_shares`. It skips rentals MRR already
+  refunded (the rental's `was_refunded`, or a `Credit/Refund` for it in
+  `/account/transactions`). Then, once per rental, the evidence is stored in `audit.db`
+  (table `tickets`) and Kilobot sends the ticket text with the time left to claim. A
+  second box, **"publicar las pruebas al dueño"** (off), also posts it on the rental's
+  message thread.
+- **"avisar antes al dueño a medio alquiler"** (off): MRR asks renters to contact the owner
+  first, so a running rental that is clearly short (past `min_fraction`, rig online, below
+  `early_max_pct` 95 %, 3 sigmas) gets one polite message on its thread with the figures.
+- Nothing is sent in `read_only`. The ticket dialog also tells you when MRR has already
+  refunded the rental.
+
+### Rentals from other markets
+
+Hashrate that reaches the gateway from a rental market without an order in the panel is
+listed in the rentals card as **detected** (orange or purple badge): source, worker, masked
+address, user agent, TH/s now and over the last hour by shares (or since it arrived, when
+that is less than an hour ago), and since when it is seen. A connection that sends only an
+address (no worker) is measured too: its samples are stored under `@<source>:<address>`, so
+it is told apart by the market it comes from (label from reverse DNS or user agent). It has
+no contract, so no face or verdict. Sources:
+
+- **PyBLØCK market**: connections from PyBLØCK's proxy (user agent `pyblock-market/…` or its
+  reverse DNS) that are not one of the PyBLØCK orders here.
+- **Your own miners are never rentals**: `own_workers` (`"worker"` or `"address.worker"`)
+  and `own_user_agents` in `config.json`, or the **"es mío"** button on a detected row. A rig
+  you list on PyBLØCK market comes back to your gateway through its proxy when nobody rents
+  it; it is shown apart as "tu minero (sin alquilar)" and can be un-marked there.
+- `other_sources` in `config.json`: a name and substrings matched against the worker, user
+  agent, reverse DNS and stratum user. Defaults: `p2phash`, `tidehash`, `routehash`.
+
+Paid PyBLØCK orders that end now go to the history too, judged on their worker.
+
 ### History and favourites
 
 When a rental stops being active, the audit judges it over its whole length (as far as
@@ -192,7 +330,9 @@ When a rental stops being active, the audit judges it over its whole length (as 
 `history_days` (7): rig, end, length, paid / MRR / received TH/s, verdict and cost. A
 rental that ends with an `ok` or `over` verdict at `favorite_pct` (95 %) or more of what
 was paid stars its rig. Stars can also be set by hand in the market, which can be
-filtered to show only them.
+filtered to show only them. Each entry has a 🗑 button to delete it now (with a
+confirmation) instead of waiting for `history_days`. A rental that MRR's list leaves out
+once (a glitch or its 100 calls/min limit) is no longer taken for finished while it runs.
 
 ### Read-only mode and dashboard without the bot
 
@@ -278,6 +418,13 @@ marked *bot* only matter for the bot.
 | `pyblock.backup.host/port` | | optional second gateway |
 | `pyblock.address` | `""` | payout address for PyBLØCK orders, `""` = `rent_address`, then the profile's |
 | `pyblock.worker_prefix` | `pyb` | worker = prefix + 6 random hex per order |
+| `p2hash.enabled` | true | show P2Hash listings and allow renting |
+| `p2hash.relays` | PyBLØCK's, relay.kilombino.com, nos.lol | Nostr relays for listings and messages |
+| `p2hash.nwc` | `""` | the paying wallet connection (set from the dashboard; never shown) |
+| `p2hash.gateway.host/port` | `pyblock.gateway` | public stratum the seller's rig mines to |
+| `p2hash.caps.rental_sats` / `day_sats` | 0 / 0 | caps (0 = off; automatic payment needs both; the dashboard's values win) |
+| `p2hash.min_pct` | 0.5 | least share of the advertised hash, since the last payment, that keeps paying |
+| `p2hash.worker_prefix` | `p2h` | worker = prefix + 6 random hex per rental |
 | `audit.enabled` | true | record gateway samples and show the rental audit |
 | `audit.assign_workers` | false | give each active rental its own worker through the MRR API |
 | `audit.worker_prefix` | `mrr` | worker name = prefix + rental id |
@@ -286,13 +433,23 @@ marked *bot* only matter for the bot.
 | `audit.series_hours` / `audit.series_bucket_s` | 6 / 600 | per-rental chart span and bucket |
 | `audit.history_days` | 7 | how long finished rentals stay in the history |
 | `audit.favorite_pct` | 95 | % of the paid hashrate a finished rental needs to star its rig |
+| `audit.tickets.max_pct` | 100 | after the end: flag only below this % of what was paid (and beyond `sigma`) |
+| `audit.tickets.sigma` | `audit.sigma` (3) | standard deviations of shortfall needed after the end |
+| `audit.tickets.min_expected_shares` | 200 | shares the paid hashrate should have brought in, to judge at all |
+| `audit.tickets.after_end_h` / `window_h` | 8.5 / 12 | when to look after the end / MRR's claim window |
+| `audit.tickets.min_fraction` / `min_observed_h` / `early_max_pct` | 0.25 / 1 / 95 | the early warning to the owner |
+| `own_workers` / `own_user_agents` | `[]` | your own miners, never shown as rentals |
+| `other_sources` | p2phash, TideHash, RouteHash | `[{"name": …, "match": [substrings]}]` for detected rentals |
 
 ## Files
 
 ```
 mrr_bot.py        the bot (CLI + MRR API client + strategy)
 dashboard.py      MRR Command Center server
-pyblock.py        PyBLØCK Market: packages, manual orders, order status
+pyblock.py        PyBLØCK Market: packages, manual orders, market orders, order status
+p2hash.py         P2Hash renter: listings, requests, tranche payments, caps
+nostr.py          minimal Nostr in the standard library (BIP-340, NIP-44, NIP-17, NWC, WebSocket)
+tickets.py        evidence text for MRR tickets and the automatic notice
 tests/            unit tests (python3 -m unittest discover -s tests)
 audit.py          rental audit: gateway samples, verdicts, per-rental worker, history, favourites
 www/index.html    dashboard UI (single file, no build step)
@@ -304,8 +461,9 @@ assets/           icon
 config.json       your secrets and knobs (gitignored)
 state.json        nonce + action log (gitignored)
 history.json      gateway hashrate history (gitignored)
-audit.db          gateway samples, rental history, favourites (gitignored)
+audit.db          gateway samples, rental history, favourites, ticket log (gitignored)
 pyblock.json      PyBLØCK orders with their secret ids (600, gitignored)
+p2hash.json       P2Hash buyer key, payments (24 h cap) and history (600, gitignored)
 ```
 
 ## Notes and gotchas

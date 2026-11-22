@@ -246,6 +246,70 @@ def extract_order_id(text):
     return t if ORDER_ID_RE.match(t) else None
 
 
+MARKET_SECRET_RE = re.compile(r"^[0-9a-f]{32}$")
+MARKET_MID_RE = re.compile(r"^m\s*[·.\-_:]?\s*([0-9a-f]{8,16})$", re.I)
+MARKET_STATUS = {"esperando_pago": "pending_payment", "activo": "active", "liquidado": "completed",
+                 "vencido": "expired"}
+
+
+def parse_market_ref(text):
+    """What the owner pasted about a PyBLØCK MARKET rental (market_minero.php), as
+    ("secret", 32 hex) — the order itself, from its secret link (…?o=<secret>) —,
+    ("mid", hex) — only the miner it rented (m·25f278f0, the public id shown next to
+    each rig) —, or (None, None)."""
+    t = str(text or "").strip()
+    if "://" in t or t.startswith(("market_minero.php", "?")):
+        q = urllib.parse.parse_qs(urllib.parse.urlparse(t).query if "://" in t else t.split("?", 1)[-1])
+        if (q.get("o") or [""])[0].strip().lower():
+            t = q["o"][0].strip()
+        elif (q.get("m") or [""])[0].strip():
+            t = "m-" + q["m"][0].strip()
+        else:
+            return None, None
+    if MARKET_SECRET_RE.match(t.lower()):
+        return "secret", t.lower()
+    m = MARKET_MID_RE.match(t)
+    if m:
+        return "mid", m.group(1).lower()
+    if re.fullmatch(r"[0-9a-f]{16}", t.lower()):
+        return "mid", t.lower()
+    return None, None
+
+
+def parse_market_order(raw, now=None):
+    """Normalise a market order (GET /orders/{secret} = market_order.php?o=): status
+    esperando_pago / activo / liquidado / vencido, the rigs, the stratum user it mines
+    with (address.worker), start and end, refunds."""
+    now = now or time.time()
+    rigs = [r for r in raw.get("rigs") or [] if isinstance(r, dict)]
+    st = str(raw.get("status") or "")
+    start, end = _num(raw.get("start")), _num(raw.get("end"))
+    srv_now = _num(raw.get("now"))
+    if end and srv_now:          # their clock, our clock
+        end = now + (end - srv_now)
+        start = (now + (start - srv_now)) if start else None
+    refund = raw.get("refund") if isinstance(raw.get("refund"), dict) else None
+    out = {
+        "order_id": None, "public_id": str(raw.get("order") or "") or None,
+        "status": MARKET_STATUS.get(st, st or None), "market_status": st or None,
+        "total_sats": int(_num(raw.get("total_sats"), 0) or 0),
+        "hours": _num(raw.get("hours")), "started_at": start, "ends_at": end if st in ("activo", "liquidado") else None,
+        "hashrate_ths": sum(_num(r.get("ths"), 0) for r in rigs) or None,
+        "live_ths": sum(_num(r.get("ths_avg"), 0) for r in rigs) if rigs else None,
+        "gateway_user": str(raw.get("user") or "") or None, "dest": str(raw.get("dest") or "") or None,
+        "rigs": [{"rig": str(r.get("rig") or "")[:40], "miner": str(r.get("miner") or "")[:20],
+                  "ths": _num(r.get("ths")), "status": r.get("status"), "f": _num(r.get("f")),
+                  "refund_sats": _num(r.get("refund_sats"))} for r in rigs],
+        "refund_sats": (int(_num(refund.get("sats"), 0)) if refund else None),
+        "refund_status": (refund.get("status") if refund else None),
+        "paused_s": _num(raw.get("paused_s")), "extended_h": _num(raw.get("extended_h")),
+    }
+    f = [r["f"] for r in out["rigs"] if r["f"] is not None]
+    if st == "liquidado" and f and out["hashrate_ths"]:
+        out["percent_done"] = sum((r["f"] or 0) * (r["ths"] or 0) for r in out["rigs"]) / out["hashrate_ths"] * 100
+    return out
+
+
 def address_matches(pattern, address):
     """Full address, or PyBLØCK's masked form 'bc1qabc…wxyz' (prefix … suffix)."""
     pattern, address = str(pattern or ""), str(address or "")
@@ -287,7 +351,7 @@ def http_json(method, url, body=None, timeout=25):
 # ----------------------------------------------------------------------------- the store
 class PyBlock:
     def __init__(self, here, cfg_fn, notify=None, gateway_clients=None, mrr_ref=None, address_fallback=None,
-                 analyse=None):
+                 analyse=None, on_finish=None):
         self.path = os.path.join(here, "pyblock.json")
         self.cfg_fn = cfg_fn
         self.notify = notify or (lambda c, text: None)
@@ -296,6 +360,8 @@ class PyBlock:
         self.address_fallback = address_fallback or (lambda: "")
         # analyse(worker, start, end, th) -> the audit's verdict dict (shares x vdiff), or None
         self.analyse = analyse or (lambda *a: None)
+        # on_finish(rec): a paid order ended (the dashboard keeps it in the history)
+        self.on_finish = on_finish or (lambda rec: None)
         self.lock = threading.RLock()
         self._pk = {"at": 0, "data": None, "error": None}
         self._gw = {"at": 0, "data": None}
@@ -498,6 +564,9 @@ class PyBlock:
         """Follow an order created outside the panel (PyBLØCK's web or app, any payment
         method): read it, check it is a rental and keep it like the others. `worker`
         (optional) is the stratum worker it mines with, or address.worker."""
+        kind, mref = parse_market_ref(text)
+        if kind:
+            return self.add_market(kind, mref, worker)
         order_id = extract_order_id(text)
         if not order_id:
             raise OrderError("pega el identificador del pedido (o el enlace de seguimiento de PyBLØCK)")
@@ -554,6 +623,139 @@ class PyBlock:
         self._notice(rec, "added")
         return self.public(rec)
 
+    def _market_base(self):
+        return self.base().split("/rentals")[0]
+
+    def _worker_arg(self, worker):
+        worker = str(worker or "").strip()
+        w_addr = ""
+        if "." in worker:
+            w_addr, _, worker = worker.partition(".")
+            if not ADDRESS_RE.match(w_addr):
+                raise OrderError("el worker va como nombre o como dirección.nombre")
+        if worker and not WORKER_RE.match(worker):
+            raise OrderError("nombre de worker no válido (letras, números, _ o -)")
+        return w_addr, worker
+
+    def add_market(self, kind, ref, worker=""):
+        """A rental of PyBLØCK MARKET (rigs listed by miners, market_minero.php), made on
+        their web. With the order's secret link it is followed whole: contract, the stratum
+        user it mines with, status, refunds. With only the miner's public id (m·xxxxxxxx)
+        the panel follows that rig's rental (TH/s, end) and measures by address: an estimate."""
+        w_addr, worker = self._worker_arg(worker)
+        with self.lock:
+            if any(o.get("order_id") == ref or (kind == "mid" and str(o.get("mid") or "").startswith(ref)
+                                             and o.get("status") not in FINAL)
+                   for o in self.state["orders"]):
+                raise OrderError("ese pedido ya está en el panel")
+        if kind == "secret":
+            try:
+                status, raw = http_json("GET", f"{self._market_base()}/orders/{ref}", timeout=20)
+            except Exception as e:
+                raise OrderError(f"sin respuesta de PyBLØCK: {e}"[:200], retryable=True)
+            if status == 404:
+                raise OrderError("PyBLØCK market no conoce ese pedido (revisa que el enlace esté entero)")
+            if status >= 400 or not isinstance(raw, dict) or not raw.get("ok"):
+                raise OrderError("PyBLØCK no lo acepta: " + (_err_text(raw) or f"HTTP {status}"),
+                                 status=status, retryable=status == 429 or status >= 500)
+            info = parse_market_order(raw)
+            if not info.get("hashrate_ths") or not info.get("hours"):
+                raise OrderError("eso no parece un alquiler del market de PyBLØCK (sin rigs u horas)")
+            gw_user = info.get("gateway_user") or ""
+            if not worker and "." in gw_user:
+                w_addr, _, worker = gw_user.partition(".")
+            addr = w_addr or (gw_user if ADDRESS_RE.match(gw_user) else "")
+            rec = {"ref": secrets.token_hex(4), "external": True, "market": True, "order_id": ref,
+                   "created": time.time(), "added": time.time(), "status": info["status"],
+                   "package": "market", "qty": len(info["rigs"]) or 1, "th": info["hashrate_ths"],
+                   "hours": info["hours"], "total_sats": info["total_sats"], "pay": "ln",
+                   "address": addr, "worker": worker or None,
+                   "match": "worker" if worker else ("address" if addr else "none"),
+                   "gateway": info.get("dest") or "", "backup": "", "notified": {},
+                   "tracking_url": self.base().split("/api/")[0] + "/market_minero.php?o=" + ref}
+            self._apply_market(rec, info)
+        else:
+            rig = self._market_rig(ref)
+            if not rig:
+                raise OrderError("ese minero no está en el market de PyBLØCK (m·… es el id público del minero)")
+            if rig.get("state") != "rented":
+                raise OrderError(f"el rig {rig.get('rig')} de {rig.get('miner')} no está alquilado ahora "
+                                 f"({rig.get('state')}); para un pedido terminado pega su enlace secreto")
+            addr, _ = self.address()
+            now = time.time()
+            ends = _num(rig.get("free_at"))
+            rec = {"ref": secrets.token_hex(4), "external": True, "market": True, "mid": rig.get("mid") or ref,
+                   "created": now, "added": now, "status": "active", "package": "market", "qty": 1,
+                   "th": _num(rig.get("ths"), 0), "hours": round(((ends or now) - now) / 3600, 2) or None,
+                   "total_sats": 0, "pay": "?", "address": w_addr or addr, "worker": worker or None,
+                   "match": "worker" if worker else ("address" if (w_addr or addr) else "none"),
+                   "gateway": "", "backup": "", "notified": {"paid": now}, "started_at": now, "ends_at": ends,
+                   "rigs": [{"rig": str(rig.get("rig") or "")[:40], "miner": str(rig.get("miner") or "")[:20],
+                             "ths": _num(rig.get("ths"))}], "estimated": True,
+                   "price_sat_th_day": _num(rig.get("price")), "checked": now}
+            if rec["price_sat_th_day"] and rec["th"] and rec["hours"]:
+                rec["total_sats"] = int(rec["price_sat_th_day"] * rec["th"] * rec["hours"] / 24)
+        with self.lock:
+            if rec["status"] in PAID:
+                rec["notified"]["paid"] = time.time()
+            if rec["status"] in FINAL:
+                rec["notified"]["ended"] = time.time()
+            self.state["orders"].append(rec)
+            self._save()
+        self._notice(rec, "added")
+        return self.public(rec)
+
+    def _market_rig(self, mid):
+        status, raw = http_json("GET", f"{self._market_base()}/rigs", timeout=20)
+        if status >= 400 or not isinstance(raw, dict):
+            raise OrderError(f"PyBLØCK market: HTTP {status}", retryable=True)
+        rigs = [dict(r) for r in raw.get("rigs") or [] if str(r.get("mid") or "").startswith(mid)]
+        srv_now = _num(raw.get("now"))
+        for r in rigs:          # their clock, our clock
+            if srv_now and _num(r.get("free_at")):
+                r["free_at"] = time.time() + (_num(r["free_at"]) - srv_now)
+        rented = [r for r in rigs if r.get("state") == "rented"]
+        return (rented or rigs or [None])[0]
+
+    def _apply_market(self, rec, info):
+        for k in ("hashrate_ths", "live_ths", "percent_done", "ends_at", "started_at", "total_sats", "hours",
+                  "refund_sats", "refund_status", "public_id", "market_status", "rigs", "paused_s", "extended_h"):
+            if info.get(k) is not None:
+                rec[k] = info[k]
+        if info.get("hashrate_ths"):
+            rec["th"] = info["hashrate_ths"]
+        if info.get("status"):
+            rec["status"] = info["status"]
+        rec["checked"] = time.time()
+
+    def _refresh_market(self, rec):
+        """One status read of a market rental (by secret, or the rig's state by miner id)."""
+        if rec.get("order_id"):
+            status, raw = http_json("GET", f"{self._market_base()}/orders/{rec['order_id']}", timeout=20)
+            if status == 404:
+                rec["misses"] = rec.get("misses", 0) + 1
+                if rec["misses"] >= 3:
+                    rec["status"] = "not_found"
+            elif status >= 400 or not isinstance(raw, dict) or not raw.get("ok"):
+                rec["error"] = (_err_text(raw) or f"HTTP {status}")[:160]
+            else:
+                rec.pop("error", None)
+                rec["misses"] = 0
+                self._apply_market(rec, parse_market_order(raw))
+        else:
+            rig = self._market_rig(rec["mid"])
+            free = _num((rig or {}).get("free_at"))
+            if rig and rig.get("state") == "rented" and free and free >= (rec.get("ends_at") or 0) - 60:
+                rec["ends_at"] = free
+                rec["hours"] = round((free - rec["started_at"]) / 3600, 2)
+                if rec.get("price_sat_th_day") and rec.get("th"):
+                    rec["total_sats"] = int(rec["price_sat_th_day"] * rec["th"] * rec["hours"] / 24)
+            else:
+                # free again (or rented by someone else after ours): over at the last end it gave
+                rec["status"] = "completed"
+                rec["ends_at"] = min(rec.get("ends_at") or time.time(), time.time())
+        rec["checked"] = time.time()
+
     def _apply(self, rec, info, raw_status=None):
         for k in ("order_id", "status_url", "tracking_url"):
             if info.get(k):
@@ -571,7 +773,7 @@ class PyBlock:
 
     def refresh(self, rec, force=False):
         """Read one order's status from PyBLØCK (rate-limited by our own cadence)."""
-        if not rec.get("order_id") or (rec.get("status") in FINAL and not force):
+        if not (rec.get("order_id") or rec.get("mid")) or (rec.get("status") in FINAL and not force):
             return rec
         due = POLL_PENDING if rec.get("status") in (None, "pending_payment") else POLL_LIVE
         if not force and time.time() - (rec.get("checked") or 0) < due:
@@ -579,6 +781,18 @@ class PyBlock:
         if force and time.time() - (rec.get("checked") or 0) < 5:
             return rec
         before = rec.get("status")
+        if rec.get("market"):
+            try:
+                with self.lock:
+                    self._refresh_market(rec)
+                    self._save()
+            except Exception as e:
+                with self.lock:
+                    rec["checked"], rec["error"] = time.time(), f"sin respuesta: {e}"[:160]
+                    self._save()
+                return rec
+            self._after_status(rec, before)
+            return rec
         try:
             status, raw = http_json("GET", f"{self.base()}/rentals/orders/{rec['order_id']}", timeout=20)
         except Exception as e:
@@ -599,23 +813,32 @@ class PyBlock:
                 rec["misses"] = 0
                 self._apply(rec, parse_order(raw))
             self._save()
+        self._after_status(rec, before)
+        return rec
+
+    def _after_status(self, rec, before):
         after = rec.get("status")
         if after != before:
             if after in PAID and not rec["notified"].get("paid"):
                 self._notice(rec, "paid")
             if after in FINAL and not rec["notified"].get("ended"):
                 self._notice(rec, "ended")
-        return rec
+                if not is_unpaid(rec):
+                    try:
+                        self.on_finish(rec)
+                    except Exception as e:
+                        print(f"[pyblock history failed: {e}]", flush=True)
 
     def poll_all(self):
         with self.lock:
             now = time.time()
             # drop drafts that never got an order id (they cannot be followed anyway)
-            keep = [o for o in self.state["orders"] if o.get("order_id") or now - o.get("created", now) < DRAFT_MAX_AGE]
+            keep = [o for o in self.state["orders"] if o.get("order_id") or o.get("mid")
+                    or now - o.get("created", now) < DRAFT_MAX_AGE]
             if len(keep) != len(self.state["orders"]):
                 self.state["orders"] = keep
                 self._save()
-            todo = [o for o in self.state["orders"] if o.get("order_id") and o.get("status") not in FINAL]
+            todo = [o for o in self.state["orders"] if (o.get("order_id") or o.get("mid")) and o.get("status") not in FINAL]
         for o in todo:
             self.refresh(o)
 
@@ -644,7 +867,7 @@ class PyBlock:
 
     # -- notices (no secrets: no order id, no invoice)
     def _notice(self, rec, kind):
-        name = "pedido externo" if rec.get("external") else f"{rec['qty']}× {rec['package']}"
+        name = self.display_name(rec)
         what = f"{name} · {rec['th']:g} TH/s × {rec['hours']:g} h · {rec['total_sats']:,} sats ({rec['pay']})"
         text = {
             "added": f"➕ PyBLØCK: pedido hecho fuera del panel añadido ({STATE_LABELS.get(rec.get('status'), rec.get('status'))}) — {what}",
@@ -661,6 +884,14 @@ class PyBlock:
             self.notify(self.cfg_fn(), text)
         except Exception:
             pass
+
+    @staticmethod
+    def display_name(rec):
+        if rec.get("market"):
+            rigs = ", ".join(f"{r.get('rig')} ({r.get('miner')})" for r in rec.get("rigs") or [] if r.get("rig"))
+            pid = f" #{rec['public_id']}" if rec.get("public_id") else ""
+            return f"market{pid} · {rigs}" if rigs else f"market{pid}"
+        return "pedido externo" if rec.get("external") else f"{rec.get('qty') or 1}× {rec.get('package') or ''}"
 
     # -- views (never the order id, nonce or the secret urls)
     def gateway_th(self, worker):
@@ -689,11 +920,22 @@ class PyBlock:
             w = c.get("worker") or ""
             if not c.get("subscribed") or not address_matches(rec["address"], c.get("address")):
                 continue
-            if w in others or mrr_re.match(w):
+            if w in others or mrr_re.match(w) or c.get("own_miner"):
                 continue
             if c.get("label") == "PyBLOCK rental" or "pyblock" in str(c.get("useragent") or "").lower():
                 out.append(c)
         return out
+
+    @staticmethod
+    def conn_key(c):
+        """What a connection's work is stored under in the audit (worker, or @source:address)."""
+        w = c.get("worker")
+        if w:
+            return w
+        lab, addr = str(c.get("label") or ""), str(c.get("address") or "")
+        if addr and lab.endswith(" rental"):
+            return "@%s:%s" % (re.sub(r"[^a-z0-9]+", "", lab[:-len(" rental")].lower()) or "x", addr)
+        return None
 
     def public(self, rec):
         out = {k: rec.get(k) for k in ("ref", "created", "status", "package", "qty", "th", "hours", "total_sats",
@@ -704,6 +946,13 @@ class PyBlock:
         if out["unpaid"]:
             out["status_label"] = UNPAID_LABEL
         out["external"] = bool(rec.get("external"))
+        out["market"] = bool(rec.get("market"))
+        out["name"] = self.display_name(rec)
+        if rec.get("market"):
+            out["estimated"] = bool(rec.get("estimated"))
+            out["rigs"] = rec.get("rigs") or []
+            for k in ("public_id", "refund_sats", "refund_status", "market_status", "paused_s"):
+                out[k] = rec.get(k)
         out["match"] = rec.get("match") or ("worker" if rec.get("worker") else "none")
         out["sent"] = bool(rec.get("order_id"))
         out["has_link"] = bool(rec.get("tracking_url") or rec.get("status_url"))
@@ -711,7 +960,7 @@ class PyBlock:
         if out["match"] == "address":
             aw = self.address_workers(rec)
             out["gateway_th"] = sum(c.get("hashrate_th") or 0 for c in aw)
-            out["address_workers"] = sorted({c.get("worker") or "" for c in aw})
+            out["address_workers"] = sorted({c.get("worker") or "(sin worker)" for c in aw})
         else:
             out["gateway_th"] = self.gateway_th(rec.get("worker"))
         if rec.get("status") in (None, "draft", "pending_payment") or (rec.get("payment") or {}).get("still_payable"):
@@ -738,7 +987,14 @@ class PyBlock:
             ends, hours = rec.get("ends_at"), rec.get("hours")
             who = rec.get("worker")
             if o["match"] == "address":
-                who = o.get("address_workers") or None
+                who = sorted({k for k in (self.conn_key(c) for c in self.address_workers(rec)) if k}) or None
+                if who:   # remembered: at the end the connections may already be gone
+                    seen = sorted(set(rec.get("seen_workers") or []) | set(who))
+                    if seen != rec.get("seen_workers"):
+                        with self.lock:
+                            rec["seen_workers"] = seen
+                            self._save()
+                    who = seen
             if o["live"] and ends and hours and who:
                 # start: PyBLØCK's started_at when it gives it, else end - length
                 start = rec.get("started_at") or (ends - hours * 3600)

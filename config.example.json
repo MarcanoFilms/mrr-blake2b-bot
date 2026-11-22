@@ -46,6 +46,15 @@
   "address": "",
   "worker_prefix": "pyb"
  },
+ "p2hash": {
+  "enabled": true,
+  "relays": ["wss://nostr.pyblock.xyz:8443", "wss://relay.kilombino.com", "wss://nos.lol"],
+  "nwc": "",
+  "gateway": {"host": "", "port": 0},
+  "caps": {"rental_sats": 0, "day_sats": 0},
+  "min_pct": 0.5,
+  "worker_prefix": "p2h"
+ },
  "audit": {
   "enabled": true,
   "assign_workers": false,

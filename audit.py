@@ -78,6 +78,20 @@ def settings(cfg):
     return out
 
 
+def sample_key(c):
+    """The name a gateway connection's work is stored under: its worker; for a rental
+    connection that has none (only an address as stratum user), "@<source>:<address>",
+    so a rental from another market can still be measured by its address."""
+    w = c.get("worker") or None
+    if w:
+        return w
+    lab, addr = str(c.get("label") or ""), str(c.get("address") or "")
+    if addr and lab.endswith(" rental"):
+        import re
+        return "@%s:%s" % (re.sub(r"[^a-z0-9]+", "", lab[:-len(" rental")].lower()) or "x", addr)
+    return None
+
+
 def parse_diff(txt):
     """Share difficulty from a gateway cell: '4096' (plain) or '17.6T' (work, SI prefix)."""
     import re
@@ -131,6 +145,15 @@ class Audit:
             cols = [r[1] for r in c.execute("PRAGMA table_info(rental_worker)")]
             if "address" not in cols:   # the payout address of the rental's pool user
                 c.execute("ALTER TABLE rental_worker ADD COLUMN address TEXT")
+            hcols = [r[1] for r in c.execute("PRAGMA table_info(history)")]
+            if "source" not in hcols:   # "mrr" (default), "pyblock"
+                c.execute("ALTER TABLE history ADD COLUMN source TEXT")
+            # small key/value store for settings changed from the dashboard (auto-ticket toggle)
+            c.execute("CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT)")
+            # one row per rental the auto-ticket acted on: never twice for the same rental
+            c.execute("""CREATE TABLE IF NOT EXISTS tickets (
+                rental_id TEXT PRIMARY KEY, at INTEGER NOT NULL, verdict TEXT, pct REAL, mrr_pct REAL,
+                evidence TEXT, message_sent INTEGER, error TEXT)""")
 
     def record(self, clients, poll_seconds):
         """Store one gateway poll (the parsed client list of dashboard.py)."""
@@ -140,7 +163,7 @@ class Audit:
         for c in clients:
             if not c.get("subscribed") or not c.get("skey"):
                 continue
-            rows.append((now, c["skey"], int(now - (c.get("subbed_s") or 0)), c.get("worker") or None,
+            rows.append((now, c["skey"], int(now - (c.get("subbed_s") or 0)), sample_key(c),
                          int(c.get("shares_accepted") or 0), parse_diff(c.get("vdiff"))))
         with self.db() as conn:
             conn.executemany("INSERT INTO samples VALUES (?,?,?,?,?,?)", rows)
@@ -329,6 +352,10 @@ class Audit:
             for rid, d in live.items():
                 conn.execute("INSERT INTO active VALUES (?,?,?) ON CONFLICT(rental_id) DO UPDATE"
                              " SET data=excluded.data, seen=excluded.seen", (rid, json.dumps(d), now))
+            if live:
+                # A rental that MRR's list left out once (a glitch, the rate limit) was taken
+                # for finished: drop it from the history as soon as it shows up running again.
+                conn.execute("DELETE FROM history WHERE rental_id IN (%s)" % ",".join("?" * len(live)), list(live))
         for d in gone:
             try:
                 self.finish(api, d, now)
@@ -342,6 +369,10 @@ class Audit:
     def finish(self, api, d, now):
         import mrr_bot
         full = api.call("GET", f"/rental/{d['id']}")
+        if not full.get("ended") and int(d.get("end_unix") or 0) > now + 300:
+            # not in the active list but MRR does not say it ended and its end is ahead:
+            # a missing entry, not a finished rental (judge it when it really ends)
+            raise RuntimeError(f"rental {d['id']} is not over yet")
         avg = (full.get("hashrate") or {}).get("average") or {}
         rig = full.get("rig") or {}
         d["rig_id"] = str(rig.get("id") or d["rig_id"])
@@ -357,15 +388,63 @@ class Audit:
         row = (d["id"], d["rig_id"], d["rig_name"], d["start_unix"], d["end_unix"], d["advertised_th"],
                mrr_bot.to_th(avg) if avg else None, a and a["delivered_th"], a and a["pct"],
                a["verdict"] if a else "none", a and a["shares"], a and a["expected_shares"],
-               str(price.get("paid") or ""), price.get("currency"), k.get("address"), w, now)
+               str(price.get("paid") or ""), price.get("currency"), k.get("address"), w, now, "mrr")
         with self.db() as conn:
-            conn.execute("INSERT OR REPLACE INTO history VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", row)
+            conn.execute(HISTORY_INSERT, row)
             if a and a["pct"] is not None and a["verdict"] in ("ok", "over") and a["pct"] >= self.s["favorite_pct"]:
                 f = conn.execute("SELECT * FROM favorites WHERE rig_id=?", (d["rig_id"],)).fetchone()
                 n = (f["rentals"] if f else 0) + 1
                 avg_pct = ((f["avg_pct"] or 0) * (n - 1) + a["pct"]) / n if f else a["pct"]
                 conn.execute("INSERT OR REPLACE INTO favorites VALUES (?,?,?,?,?,?)",
                              (d["rig_id"], d["rig_name"], n, avg_pct, a["pct"], now))
+
+    def add_history(self, row):
+        """Store a finished rental from another source (PyBLØCK): a dict with the history columns."""
+        cols = ("rental_id", "rig_id", "rig_name", "start_unix", "end_unix", "advertised_th", "mrr_average_th",
+                "delivered_th", "pct", "verdict", "shares", "expected_shares", "paid", "currency", "address",
+                "worker", "finished", "source")
+        with self.db() as conn:
+            conn.execute(HISTORY_INSERT, tuple(row.get(k) for k in cols))
+
+    def delete_history(self, rental_id):
+        """Drop one finished rental from the history by hand (the favourites are kept)."""
+        with self.db() as conn:
+            return conn.execute("DELETE FROM history WHERE rental_id=?", (str(rental_id),)).rowcount
+
+    # ------------------------------------------------------------------ settings and the ticket log
+    def kv_get(self, k, default=None):
+        import json
+        with self.db() as conn:
+            r = conn.execute("SELECT v FROM kv WHERE k=?", (k,)).fetchone()
+        try:
+            return json.loads(r["v"]) if r else default
+        except ValueError:
+            return default
+
+    def kv_set(self, k, v):
+        import json
+        with self.db() as conn:
+            conn.execute("INSERT OR REPLACE INTO kv VALUES (?,?)", (k, json.dumps(v)))
+
+    def ticket_claim(self, rental_id, now, verdict, pct, mrr_pct, evidence):
+        """Reserve the one ticket a rental may get. False if it already had one."""
+        with self.db() as conn:
+            cur = conn.execute("INSERT OR IGNORE INTO tickets (rental_id, at, verdict, pct, mrr_pct, evidence)"
+                               " VALUES (?,?,?,?,?,?)", (str(rental_id), int(now), verdict, pct, mrr_pct, evidence))
+            return cur.rowcount == 1
+
+    def ticket_seen(self, rental_id):
+        with self.db() as conn:
+            return conn.execute("SELECT 1 FROM tickets WHERE rental_id=?", (str(rental_id),)).fetchone() is not None
+
+    def ticket_update(self, rental_id, message_sent=None, error=None):
+        with self.db() as conn:
+            conn.execute("UPDATE tickets SET message_sent=?, error=? WHERE rental_id=?",
+                         (None if message_sent is None else int(bool(message_sent)), error, str(rental_id)))
+
+    def tickets(self, limit=50):
+        with self.db() as conn:
+            return [dict(r) for r in conn.execute("SELECT * FROM tickets ORDER BY at DESC LIMIT ?", (int(limit),))]
 
     def history(self):
         with self.db() as conn:
@@ -410,6 +489,11 @@ class Audit:
             st = dict(_status)
         return {"rentals": out, "series": self.series(workers), "sync": st,
                 "assign_workers": bool(self.s["assign_workers"]), "sigma": self.s["sigma"]}
+
+
+HISTORY_INSERT = ("INSERT OR REPLACE INTO history (rental_id, rig_id, rig_name, start_unix, end_unix, advertised_th,"
+                  " mrr_average_th, delivered_th, pct, verdict, shares, expected_shares, paid, currency, address, worker,"
+                  " finished, source) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 
 
 def top_pool(api, rid):

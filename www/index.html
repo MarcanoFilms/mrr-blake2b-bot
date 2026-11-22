@@ -106,6 +106,28 @@ button.pybbtn:hover{box-shadow:0 0 18px rgba(185,107,255,.6);color:#fff}
 .verd.unpaid{color:var(--muted);border-color:var(--line2);background:transparent;text-transform:none;letter-spacing:.3px}
 .vrow.pyb.dim{opacity:.75;grid-template-columns:1fr auto}
 .tag.ext{border-color:var(--line2);color:var(--muted)}
+.tag.p2h{border-color:rgba(255,122,217,.7);color:#ff7ad9;background:rgba(255,122,217,.09)}
+.p2hbox{border:1px solid rgba(255,122,217,.35);background:rgba(255,122,217,.035);padding:12px 14px;margin-bottom:16px;position:relative}
+.p2hbox::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:#ff7ad9;box-shadow:0 0 10px #ff7ad9}
+.p2hbox h3{margin:0 0 8px;font:700 12px var(--display);letter-spacing:2px;text-transform:uppercase;color:#ff7ad9;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.p2hbox .line{display:flex;gap:8px 14px;flex-wrap:wrap;align-items:center;font-size:12.5px;margin:0 0 8px}
+.p2hbox .line input{width:auto;font:500 12px var(--mono);padding:5px 8px}
+#t-p2h th{color:#ffb3ea;background:rgba(255,122,217,.06)} #t-p2h td,#t-p2h th{padding:7px 8px}
+button.p2hbtn{background:linear-gradient(135deg,#ff7ad9,#c4389f);border-color:transparent;color:#fff;font-weight:700}
+button.p2hbtn:hover{box-shadow:0 0 18px rgba(255,122,217,.6);color:#fff}
+.vrow.p2h{border-left:2px solid #ff7ad9;padding-left:10px;background:rgba(255,122,217,.035)}
+.vb.h i{background:linear-gradient(90deg,rgba(255,122,217,.35),#ff7ad9);box-shadow:0 0 8px rgba(255,122,217,.6)}
+.p2hpend{margin-top:8px;padding:8px;border:1px solid rgba(255,122,217,.6);background:rgba(255,122,217,.08)}
+.p2htr{font:500 11.5px var(--mono);color:var(--muted);margin-top:6px;max-height:110px;overflow:auto}
+.p2htr b{color:var(--text)}
+.tag.oth{border-color:rgba(255,179,71,.7);color:#ffb347;background:rgba(255,179,71,.08)}
+.vrow.oth{border-left:2px solid #ffb347;padding-left:10px;background:rgba(255,179,71,.035)}
+.atbar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin:-4px 0 10px;padding:8px 10px;border:1px dashed var(--line2);font-size:13px}
+.atbar .switch{font-size:13px}.atbar .sub{display:inline-flex;gap:6px;align-items:center;color:var(--muted);white-space:nowrap}.atbar .sub input{width:auto;margin:0}
+.atbar .atlog{flex-basis:100%;font-size:12px;color:var(--muted)}
+.tkbtn{border-color:rgba(255,59,92,.6)!important;color:var(--bad)!important}
+.delbtn{background:none;border:0;clip-path:none;padding:0 6px;color:#55658a;cursor:pointer;font-size:15px}.delbtn:hover{color:var(--bad);box-shadow:none}
+#tk-text{width:100%;min-height:210px;box-sizing:border-box;font:12px var(--mono);background:#080c15;color:var(--text);border:1px solid var(--line2);padding:8px}
 .pybadd{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 10px;font-size:12.5px}
 .pybadd input{width:auto;flex:1 1 220px;min-width:160px;font:500 12px var(--mono);padding:5px 8px}
 .pybadd input.w{flex:0 1 170px}
@@ -187,7 +209,7 @@ dialog b{font-family:var(--display);font-size:14px;letter-spacing:.5px}
 .section-num{font:500 10px var(--mono);color:var(--dim);letter-spacing:2px}
 .corner{position:absolute;width:12px;height:12px;border-color:var(--cyan);border-style:solid;opacity:.6;pointer-events:none}
 .corner.tr{top:4px;right:4px;border-width:1px 1px 0 0}.corner.bl{bottom:4px;left:4px;border-width:0 0 1px 1px}
-body.ro .rw,body.ro #sw-timer,body.ro #btn-run,body.ro #cfg,body.ro button[data-rent]{display:none!important}
+body.ro .rw,body.ro .ro-hide,body.ro #sw-timer,body.ro #btn-run,body.ro #cfg,body.ro button[data-rent]{display:none!important}
 body.ro .ro-note{display:block!important}
 body.noaudit .audit-only{display:none}
 body:not(.noaudit) .noaudit-only{display:none}
@@ -295,14 +317,24 @@ body.nobot #hashcard{grid-column:span 12}
 
   <section class="card span12 audit-only"><i class="corner tr"></i><i class="corner bl"></i>
     <h2><span id="v-title">Alquileres</span> <span class="right">pagado · lo que dice MRR · lo que llega al gateway</span></h2>
+    <div class="atbar ro-hide" id="at-bar">
+      <label class="switch" id="sw-at"><i></i><span id="at-label">ticket automático al terminar: apagado</span></label>
+      <label class="sub" title="Al terminar, publicar también las pruebas en el hilo de mensajes del alquiler (lo leen el dueño del rig y el soporte de MRR)"><input type="checkbox" id="at-msg"> publicar las pruebas al dueño</label>
+      <label class="sub" title="MRR pide avisar antes al dueño: un mensaje amable en el hilo del alquiler cuando a medio alquiler va claramente corto (una vez por alquiler)"><input type="checkbox" id="at-early"> avisar antes al dueño a medio alquiler</label>
+      <span class="muted" id="at-rules" style="cursor:help;border-bottom:1px dotted var(--line2)"></span>
+      <div class="atlog" id="at-log"></div>
+    </div>
+    <div id="p2h-active"></div>
     <div id="pyb-orders"></div>
+    <div id="other-rentals"></div>
+    <div id="own-miners" class="muted" style="font-size:12.5px;margin:4px 0 8px"></div>
     <div id="verdicts" class="muted">consultando…</div>
   </section>
 
   <section class="card span12 audit-only"><i class="corner tr"></i><i class="corner bl"></i>
     <h2>Terminados <span class="right" id="hist-info"></span></h2>
     <div id="favs" style="margin-bottom:10px"></div>
-    <div class="scroll"><table id="t-hist"><thead><tr><th></th><th>Rig</th><th>Terminó</th><th>Duró</th><th title="Hashrate contratado">Pagado</th><th>MRR dijo</th><th title="Lo que llegó al gateway en todo el alquiler">Recibido</th><th>Veredicto</th><th>Coste</th></tr></thead><tbody></tbody></table></div>
+    <div class="scroll"><table id="t-hist"><thead><tr><th></th><th>Rig</th><th>Terminó</th><th>Duró</th><th title="Hashrate contratado">Pagado</th><th>MRR dijo</th><th title="Lo que llegó al gateway en todo el alquiler">Recibido</th><th>Veredicto</th><th>Coste</th><th></th></tr></thead><tbody></tbody></table></div>
   </section>
 
   <section class="card span12"><i class="corner tr"></i><i class="corner bl"></i>
@@ -321,6 +353,7 @@ body.nobot #hashcard{grid-column:span 12}
     <div class="legend">
       <span><span class="tag mrr">MRR proxy</span> rig alquilado en MiningRigRentals (llega vía su proxy)</span>
       <span><span class="tag pyb">PyBLOCK rental</span> hashrate alquilado en PyBLØCK (worker <span class="mono">pyb…</span> si lo pediste desde aquí)</span>
+      <span><span class="tag p2h">P2Hash rental</span> rig alquilado por tramos en P2Hash desde aquí (worker <span class="mono">p2h…</span>)</span>
       <span><span class="tag own">propia</span> paga a una dirección tuya</span>
       <span><span class="tag foreign">ajena</span> alguien de la comunidad minando a su propia dirección</span>
       <span><span class="tag idle">sin suscribir</span> conexión TCP abierta que nunca envió <code>mining.subscribe</code> (escáneres de puertos, sondas, clientes mal configurados)</span>
@@ -347,13 +380,24 @@ body.nobot #hashcard{grid-column:span 12}
       <div class="muted" style="font-size:12.5px;margin-bottom:8px" id="pyb-where"></div>
       <div class="pybadd" title="Un pedido que hiciste en la web o la app de PyBLØCK (cualquier forma de pago): el panel lo sigue como los suyos. El identificador es secreto: se guarda solo en pyblock.json y no se muestra.">
         <span style="color:#d6b3ff">Añadir orden de PyBLØCK</span>
-        <input id="pyb-add-id" type="password" autocomplete="off" spellcheck="false" placeholder="id del pedido o enlace de seguimiento">
+        <input id="pyb-add-id" type="password" autocomplete="off" spellcheck="false" placeholder="pedido: id, enlace de seguimiento, enlace del market (…?o=) o m·xxxxxxxx" title="Paquetes: id o enlace de seguimiento. Market (rigs de mineros): el enlace secreto del pedido (market_minero.php?o=…) da contrato, cara y veredicto; con solo el id del minero (m·25f278f0) se sigue el alquiler de ese rig de forma estimada.">
         <input id="pyb-add-w" class="w" autocomplete="off" spellcheck="false" placeholder="worker (opcional)" title="El worker con el que mina en tu gateway (nombre o dirección.nombre). Sin él se mide por la dirección de cobro, de forma aproximada.">
         <button class="small pybbtn" id="pyb-add">Añadir</button></div>
       <div class="scroll"><table id="t-pyb"><thead><tr>
         <th>Paquete</th><th title="TH/s por unidad">TH/s</th><th>Horas</th><th title="Unidades (máquinas); el precio no es lineal: cada paso tiene el suyo">Uds</th><th title="TH/s totales del pedido">Total TH/s</th><th class="pyb-unit-tot">sats</th><th class="pyb-unit-day" title="Total / TH / días">sats/TH/día</th><th title="Frente al mercado de MRR (últimos 10 alquileres, con su fee). Negativo = PyBLØCK más barato">vs MRR</th><th>Pago</th><th></th>
       </tr></thead><tbody></tbody></table></div>
       <div class="muted" style="font-size:12px;margin-top:6px">Mismo «sats» que el mercado de MRR. Solo se pide si confirmas; la factura la pagas tú desde tu wallet (aquí no se paga nada solo). Sin reembolsos, según PyBLØCK.</div>
+    </div>
+    <div class="p2hbox" id="p2h-box" style="display:none">
+      <h3><span class="tag p2h">P2Hash</span> rigs de PyBLØCK sobre Nostr · pago por tramos <span class="right muted" style="margin-left:auto;font:500 12px var(--mono);letter-spacing:0;text-transform:none" id="p2h-info"></span></h3>
+      <div class="line" id="p2h-wallet"></div>
+      <div class="line" id="p2h-where"></div>
+      <div class="line ro-hide" id="p2h-caps"></div>
+      <div class="scroll"><table id="t-p2h"><thead><tr>
+        <th>Rig</th><th title="Lo que anuncia el vendedor">TH/s</th><th class="p2h-unit-day">sats/TH/día</th><th title="Frente al mercado de MRR (últimos 10 alquileres, con su fee). Negativo = P2Hash más barato">vs MRR</th><th title="Cada tramo se paga por adelantado">Tramo</th><th>Horas</th><th>Estado</th><th></th>
+      </tr></thead><tbody></tbody></table></div>
+      <div class="muted" style="font-size:12px;margin-top:6px" id="p2h-foot">Protocolo del PyBLØCK Hashrate Agent: cada tramo se paga por adelantado a la oferta BOLT12 del vendedor desde tu conexión de pago, y solo si tu gateway ve llegar el hash. Por defecto cada tramo espera tu clic; el pago automático exige activarlo y fijar los dos topes. Tu riesgo: un tramo.</div>
+      <div id="p2h-hist" style="margin-top:8px"></div>
     </div>
     <h3 style="margin:4px 0 8px;font:700 12px var(--display);letter-spacing:2px;text-transform:uppercase;color:var(--cyan2)"><span class="tag mrrb">MRR</span> MiningRigRentals</h3>
     <div class="row rw" style="margin-bottom:10px">
@@ -379,6 +423,8 @@ body.nobot #hashcard{grid-column:span 12}
 
 <div class="toast" id="toast"></div>
 <dialog id="pyb-dlg"><div class="pybpay" id="pyb-pay"></div><div class="row" style="justify-content:flex-end;margin-top:12px"><button id="pyb-dlg-close">Cerrar</button></div></dialog>
+<dialog id="tk-dlg"><div id="tk-head"></div><textarea id="tk-text" readonly></textarea>
+  <div class="row" style="justify-content:flex-end;margin-top:12px;flex-wrap:wrap"><a class="small" id="tk-center" href="https://www.miningrigrentals.com/tickets" target="_blank" rel="noopener noreferrer">centro de tickets ↗</a><button id="tk-close">Cerrar</button><button class="primary" id="tk-go">Copiar y abrir el alquiler en MRR</button></div></dialog>
 <dialog id="dlg"><div id="dlg-body"></div><div class="row" style="justify-content:flex-end;margin-top:16px"><button id="dlg-no">Cancelar</button><button id="dlg-yes" class="primary">Confirmar</button></div></dialog>
 
 <script>
@@ -386,7 +432,9 @@ const $ = s => document.querySelector(s);
 const fmtBtc = x => (x==null||isNaN(x)) ? '–' : Number(x).toFixed(8);
 const fmtTh = x => x>=1000 ? (x/1000).toFixed(2)+' PH/s' : x>=1 ? x.toFixed(2)+' TH/s' : (x*1000).toFixed(0)+' GH/s';
 const fmtH = h => h>=48 ? (h/24).toFixed(1)+' d' : h.toFixed(1)+' h';
-const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// MRR sends some rig names already HTML-escaped ("SC BOX ---&gt; FAST"): undo that first so they are not escaped twice
+const unent = s => String(s??'').replace(/&(amp|lt|gt|quot|#0?39);/g,(m,k)=>({amp:'&',lt:'<',gt:'>',quot:'"','#39':"'",'#039':"'"}[k]));
+const esc = s => unent(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let state = null, toastT = null;
 const L = ()=> (state && state.labels) || {coin:'BTC', unit:'sats'};
 const units = x => Math.round(x*1e8).toLocaleString();
@@ -457,7 +505,12 @@ function render(d){
   renderClients(gw, d.own_addresses||[]);
   renderRentals(mrr);
   renderPyb(d.pyblock);
+  renderP2h(d.p2hash);
+  renderOthers(d.others||[]);
+  renderOwnMiners(d.own_miners||[]);
+  renderAutoTicket(d.autoticket);
   drawChart(d.history||[]);
+  if(!render.labelled){ render.labelled=1; if(typeof hist!=='undefined' && hist) loadHistory(); }   // the history may have been drawn before the labels (coin name) arrived
 }
 
 function renderClients(gw, own){
@@ -466,7 +519,7 @@ function renderClients(gw, own){
   const rows = gw.clients.map(c=>{
     if(!c.subscribed) return `<tr class="muted"><td class="mono">${esc(c.ip)}<br><small>${esc(c.host)}</small></td><td colspan="8"><span class="tag idle" title="Abrió el socket pero nunca mandó mining.subscribe: suele ser un escáner o sonda, no un ASIC minando">sin suscribir</span> ${esc(c.label)}</td><td>${c.kick?`<button class="small danger" data-kick='${JSON.stringify(c.kick)}'>Kick</button>`:''}</td></tr>`;
     const ownTag = c.own===true ? '<span class="tag own">propia</span>' : c.own===false ? '<span class="tag foreign">AJENA</span>' : '';
-    const lbl = c.label ? `<span class="tag ${c.label==='MRR proxy'?'mrr':c.label==='PyBLOCK rental'?'pyb':''}">${esc(c.label)}</span>` : '';
+    const lbl = c.label ? `<span class="tag ${c.label==='MRR proxy'?'mrr':c.label==='PyBLOCK rental'?'pyb':c.label==='P2Hash rental'?'p2h':''}">${esc(c.label)}</span>` : '';
     const pct = Math.round((c.hashrate_th||0)/maxTh*100);
     return `<tr>
       <td class="mono">${esc(c.ip)}<br><small class="muted">${esc(c.host)}</small> ${lbl}</td>
@@ -644,9 +697,9 @@ function face(x, ref){
     <circle cx="16" cy="18" r="2.6" fill="${col}"/><circle cx="30" cy="18" r="2.6" fill="${col}"/><path d="${mouth}" fill="none" stroke="${col}" stroke-width="2.6" stroke-linecap="round"/></svg>`;
 }
 // "alquilado a X u/TH/día · renovar a Y": Y green when it costs the same or less, amber when more.
-function priceLine(paid, renew, tipPaid, tipRenew, why){
+function priceLine(paid, renew, tipPaid, tipRenew, why, unit){
   if(paid==null && renew==null && !why) return '';
-  const u=esc(L().unit), n=v=>Math.round(v).toLocaleString('de-DE');   // 1.810: grouped also with 4 digits (es-ES does not)
+  const u=esc(unit||L().unit), n=v=>Math.round(v).toLocaleString('de-DE');   // 1.810: grouped also with 4 digits (es-ES does not)
   const cls = (paid!=null && renew!=null) ? (renew<=paid*1.005?'pg':'py') : '';
   return `<div class="vprice"><span title="${esc(tipPaid)}">alquilado a <b>${paid!=null?n(paid):'–'}</b> ${u}/TH/día</span>`
     + ` · <span style="white-space:nowrap" title="${esc(tipRenew)}">${why?'renovar: no, '+esc(why):'renovar a <b class="'+cls+'">'+(renew!=null?n(renew):'—')+'</b>'}</span></div>`;
@@ -703,14 +756,16 @@ function renderAudit(){
       ${a.partial?'<div class="muted" style="font-size:11.5px">medido desde '+new Date(a.observed_from*1000).toLocaleString([], {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})+'</div>':''}
       ${(()=>{ const room=(x.max_h!=null&&x.length_h!=null)?Math.floor(parseFloat(x.max_h)-x.length_h):null;
          const why=!x.extensions?'El dueño del rig no permite extender':(room!=null&&room<1)?'Ya está en el máximo de horas del rig ('+x.max_h+' h)':'';
-         return `<div class="row rw" style="margin-top:6px;flex-wrap:nowrap" title="${esc(why)}"><input type="number" step="1" min="1" ${room?'max="'+room+'"':''} value="${room?Math.min(24,room):24}" style="width:70px" id="vext-${esc(x.id)}" ${why?'disabled':''}><span class="muted">h</span>
+         return `<div class="row rw" style="margin-top:6px;flex-wrap:nowrap" title="${esc(why)}"><input type="number" step="1" min="1" ${room>0?'max="'+room+'"':''} value="${room>0?Math.min(24,room):24}" style="width:70px" id="vext-${esc(x.id)}" ${why?'disabled':''}><span class="muted">h</span>
         <button class="small primary" data-vext="${esc(x.id)}" ${why?'disabled':''}>Extender</button>${why?'<span class="muted" style="font-size:11.5px">'+esc(why)+'</span>':room!=null?'<span class="muted" style="font-size:11.5px">hasta '+room+' h más</span>':''}</div>`; })()}</div>
       <div class="vmid"><div class="left ${(x.left_h||0)<6?'soon':''}" title="Tiempo que le queda a este alquiler"><b>${fmtLeft(x.left_h||0)}</b><span>quedan</span></div><div class="vface">${face(x)}${star}</div><div class="vbars">${b2('c','pagado',x.advertised_th)}${b2('m','MRR dice',x.mrr_average_th)}${b2('d','gateway',a.delivered_th, a.rel_err_pct?' <span class="muted">±'+a.rel_err_pct.toFixed(0)+'%</span>':'')}</div></div>
       <div><span class="verd ${a.verdict}" title="${esc(VHELP[a.verdict]||'')}">${VTXT[a.verdict]||a.verdict}</span>${a.z!=null&&Math.abs(a.z)>audit.sigma?'<div class="muted mono" style="font-size:11px;margin-top:4px">'+Math.abs(a.z).toFixed(1)+' sigmas</div>':''}
-        ${a.shares!=null?'<div class="muted mono" style="font-size:11px;margin-top:4px">'+a.shares.toLocaleString()+' / '+Math.round(a.expected_shares).toLocaleString()+' shares</div>':''}</div></div>`;}).join('')
+        ${a.shares!=null?'<div class="muted mono" style="font-size:11px;margin-top:4px">'+a.shares.toLocaleString()+' / '+Math.round(a.expected_shares).toLocaleString()+' shares</div>':''}
+        ${ticketInfo(x)}</div></div>`;}).join('')
     : '<div class="muted">sin rentas activas</div>';
   $('#verdicts').querySelectorAll('button[data-vfav]').forEach(b=>b.onclick=async()=>{
     try{ await api('/api/favorite',{rig:b.dataset.vfav,name:b.dataset.name,on:!b.classList.contains('on')}); await loadHistory(); renderAudit(); loadMarket(); }catch(e){ toast(e.message,true); } });
+  $('#verdicts').querySelectorAll('button[data-ticket]').forEach(b=>b.onclick=()=>openTicket(b.dataset.ticket));
   $('#verdicts').querySelectorAll('button[data-vext]').forEach(b=>b.onclick=async()=>{
     const id=b.dataset.vext, hours=parseFloat($('#vext-'+id).value);
     try{
@@ -763,18 +818,219 @@ async function loadHistory(){
     `<a class="tag" style="margin:2px 4px;color:var(--warn);border-color:rgba(255,210,63,.5)" href="https://www.miningrigrentals.com/rigs/${esc(f.rig_id)}" target="_blank" rel="noopener" title="${f.rentals?f.rentals+' alquiler(es) cumplidos, media '+Math.round(f.avg_pct)+'%':'marcado a mano'}">★ ${esc(f.rig_name||f.rig_id)}</a>`).join('')
     : '<span class="muted">Aún no hay favoritos: un rig entra solo cuando un alquiler suyo termina cumpliendo, o marcándolo con ☆ en el mercado.</span>';
   const fmtD=s=>new Date(s*1000).toLocaleString([], {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-  $('#t-hist tbody').innerHTML = H.length ? H.map(h=>`<tr>
-    <td>${face({advertised_th:h.advertised_th,mrr_average_th:h.mrr_average_th,analysis:h.delivered_th!=null?{delivered_th:h.delivered_th}:null}).replace('class="face"','class="face" style="width:30px;height:30px"')}</td>
-    <td><a class="rn" href="https://www.miningrigrentals.com/rental/${esc(h.rental_id)}" target="_blank" rel="noopener">${esc(h.rig_name||h.rig_id)} ↗</a></td>
+  $('#t-hist tbody').innerHTML = H.length ? H.map(h=>{ const isP=h.source==='pyblock'||h.source==='p2hash', isH=h.source==='p2hash';
+    const ts=(state&&state.autoticket&&state.autoticket.settings)||{}, sg=ts.sigma||3;
+    const z=(h.expected_shares>0)?(h.expected_shares-(h.shares||0))/Math.sqrt(h.expected_shares):null;
+    const sad=h.delivered_th!=null && h.pct!=null && h.pct<(ts.max_pct||100) && z!=null && z>sg;   // the same test as the automatic notice
+    const tk=((state&&state.autoticket&&state.autoticket.log)||[]).find(y=>String(y.rental_id)===String(h.rental_id));
+    const tkb=tk?(tk.verdict==='refunded'?' <span class="verd ok" title="'+esc(tk.error||'')+'">reembolsado</span>':' <span class="muted" style="font-size:11px">🎫 avisado</span>'):'';
+    const left=h.end_unix ? (h.end_unix+12*3600-Date.now()/1000)/3600 : -1;
+    return `<tr>
+    <td>${face({advertised_th:h.advertised_th,mrr_average_th:h.mrr_average_th,analysis:h.delivered_th!=null?{delivered_th:h.delivered_th}:null}, isH?'el vendedor':isP?'PyBLØCK':'MRR').replace('class="face"','class="face" style="width:30px;height:30px"')}</td>
+    <td>${isH?'<span class="tag p2h">P2Hash</span> <b>'+esc(String(h.rig_name||'').replace(/^P2Hash /,''))+'</b>':isP?'<span class="tag pyb">PyBLØCK</span> <b>'+esc(String(h.rig_name||'').replace(/^PyBLØCK /,''))+'</b>'
+         :`<a class="rn" href="https://www.miningrigrentals.com/rental/${esc(h.rental_id)}" target="_blank" rel="noopener">${esc(h.rig_name||h.rig_id)} ↗</a>`}</td>
     <td>${fmtD(h.end_unix)}</td><td>${fmtH((h.end_unix-h.start_unix)/3600)}</td>
     <td>${(h.advertised_th||0).toFixed(2)} TH/s</td><td>${h.mrr_average_th!=null?h.mrr_average_th.toFixed(2)+' TH/s':'–'}</td>
     <td><b style="color:var(--accent2)">${h.delivered_th!=null?h.delivered_th.toFixed(2)+' TH/s':'–'}</b>${h.pct!=null?' <span class="muted">('+Math.round(h.pct)+'%)</span>':''}</td>
-    <td><span class="verd ${esc(h.verdict)}">${VTXT[h.verdict]||esc(h.verdict)}</span></td><td class="mono">${esc(h.paid)} ${esc(h.currency==='BTC'?C:(h.currency||''))}</td></tr>`).join('')
-    : `<tr><td colspan="9" class="muted">Ningún alquiler ha terminado desde que se guarda el historial.</td></tr>`;
+    <td><span class="verd ${esc(h.verdict)}">${VTXT[h.verdict]||esc(h.verdict)}</span>${!isP&&sad&&left>0?` <button class="small tkbtn" data-ticket="${esc(h.rental_id)}" title="Llegó ${z!=null?z.toFixed(1):'?'} σ por debajo de lo pagado. MRR revisa reembolsos hasta 12 h después de terminar: quedan ${fmtLeft(left)}">Abrir ticket · ${fmtLeft(left)}</button>`:''}${tkb}</td>
+    <td class="mono">${isP?(Number(h.paid)||0).toLocaleString()+' '+esc(isH?xbtUnit():L().unit):esc(h.paid)+' '+esc(h.currency==='BTC'?C:(h.currency||''))}</td>
+    <td><button class="delbtn" data-hdel="${esc(h.rental_id)}" data-name="${esc(h.rig_name||h.rental_id)}" title="Borrar del historial ya (si no, se borra solo a los ${hist.history_days||7} días)">🗑</button></td></tr>`; }).join('')
+    : `<tr><td colspan="10" class="muted">Ningún alquiler ha terminado desde que se guarda el historial.</td></tr>`;
+  $('#t-hist').querySelectorAll('button[data-ticket]').forEach(b=>b.onclick=()=>openTicket(b.dataset.ticket));
+  $('#t-hist').querySelectorAll('button[data-hdel]').forEach(b=>b.onclick=async()=>{
+    if(!await confirmDlg(`<b>Borrar del historial</b><p>${esc(b.dataset.name)}</p><p class="muted">Solo se quita de esta lista; los favoritos se quedan como están.</p>`)) return;
+    try{ await api('/api/history/delete',{rental_id:b.dataset.hdel}); toast('Borrado del historial'); loadHistory(); }catch(e){ toast(e.message,true); } });
 }
 async function loadAudit(){ try{ audit=await api('/api/audit'); renderAudit(); if(state) renderRentals(state.mrr); }catch(e){ const el=$('#cotejo'); if(el) el.textContent='auditoría no disponible: '+e.message; } }
 window.addEventListener('resize', drawChart2);
 loadAudit(); setInterval(loadAudit, 60000); setInterval(loadHistory, 300000);
+
+// ---------------------------------------------------------------- tickets (tickets.py)
+// MRR has no API to open a ticket: the panel pre-fills the evidence, copies it and opens the
+// rental's page on MRR, where its own "ticket" button is. The automatic switch keeps the evidence,
+// can post it on the rental's message thread (the API allows that) and sends a Kilobot notice.
+function isSad(x){ const a=x.analysis; return !!(a && a.delivered_th!=null && x.advertised_th && a.delivered_th<x.advertised_th*0.95 && ['short','nothing'].includes(a.verdict)); }
+function ticketInfo(x){
+  const t=((state&&state.autoticket&&state.autoticket.log)||[]).find(y=>String(y.rental_id)===String(x.id)+':early');
+  const done=t?`<div class="muted" style="font-size:11px;margin-top:4px" title="${esc(t.error||'')}">📨 ${t.message_sent?'dueño avisado':'<span class="bad">aviso al dueño falló</span>'} ${new Date(t.at*1000).toLocaleString([], {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>`:'';
+  return (isSad(x)?`<div style="margin-top:6px"><button class="small tkbtn" data-ticket="${esc(x.id)}" title="Prepara el texto con las pruebas y abre el alquiler en MRR">Abrir ticket</button></div>`:'')+done;
+}
+let tkCur=null;
+async function openTicket(id){
+  try{
+    const d=await api('/api/ticket-draft?id='+encodeURIComponent(id)); tkCur=d;
+    const left=d.end_unix?(d.end_unix+12*3600-Date.now()/1000)/3600:null;
+    $('#tk-head').innerHTML = `<b>Ticket para el alquiler #${esc(id)}</b>
+      <p class="muted" style="font-size:12.5px;margin:6px 0 8px">MRR no deja abrir tickets por su API: copia este texto y pégalo en el ticket del alquiler (botón de ticket en su página de MRR).
+      ${d.refunded?'<b class="ok">MRR ya lo ha reembolsado ('+esc(d.refund_info||'')+'): no hace falta ticket.</b> ':''}${d.active?'El alquiler sigue en marcha: MRR pide avisar antes al dueño y <b>solo revisa reembolsos cuando termina</b> (hasta 12 h después).':'Plazo de MRR para reclamar: '+(left>0?'<b>quedan '+fmtLeft(left)+'</b>':'<span class="bad">pasado</span>')+' (12 h tras terminar).'}</p>`;
+    $('#tk-text').value=d.text; $('#tk-dlg').showModal();
+  }catch(e){ toast(e.message,true); }
+}
+$('#tk-close').onclick=()=>$('#tk-dlg').close();
+$('#tk-go').onclick=async()=>{ if(!tkCur) return;
+  try{ await navigator.clipboard.writeText(tkCur.text); toast('Texto copiado: pégalo en el ticket'); }
+  catch(e){ $('#tk-text').select(); document.execCommand('copy'); toast('Texto copiado: pégalo en el ticket'); }
+  window.open(tkCur.url,'_blank','noopener'); };
+function renderAutoTicket(t){
+  const bar=$('#at-bar'); if(!t){ bar.style.display='none'; return; } bar.style.display='';
+  $('#sw-at').className='switch'+(t.enabled?' on':''); $('#at-label').textContent='ticket automático al terminar: '+(t.enabled?'encendido':'apagado');
+  $('#at-msg').checked=!!t.message_owner; $('#at-msg').disabled=!t.enabled; $('#at-early').checked=!!t.warn_early;
+  const s=t.settings||{}, sg=s.sigma||3;
+  $('#at-rules').textContent=`al terminar, si llegó < ${s.max_pct||100} % más allá del ruido (${sg} σ) y MRR no lo ha reembolsado · plazo ${s.window_h||12} h · una vez por alquiler`;
+  $('#at-rules').title=`Cómo se decide: las shares llegan al azar (proceso de Poisson), así que un rig que entrega justo el 100 % se mide unas veces por encima y otras por debajo, más o menos 1/√(shares esperadas): con 10.000 shares esperadas, ±1 %. Por eso no basta con «menos del 100 %»: se avisa solo si faltan más de ${sg} desviaciones (shares esperadas − recibidas > ${sg}·√esperadas), algo que a un rig que cumplió le pasa ~1 de cada 700 veces, y además por debajo del ${s.max_pct||100} %. Se mira tras terminar (MRR solo revisa entregas parciales cuando el alquiler acaba y da 12 h para reclamar), ${s.after_end_h!=null?s.after_end_h:8.5} h después del final: MRR revisa sola los alquileres cortos y reembolsa al acabar o hasta ~8 h después (pide esperar su revisión antes de abrir ticket). Se salta si MRR ya lo reembolsó (marca del alquiler o un Credit/Refund en tus movimientos). El botón «Abrir ticket» del historial está disponible desde el primer momento.`;
+  const lg=(t.log||[]).filter(x=>!String(x.rental_id).endsWith(':early')&&x.verdict!=='refunded');
+  $('#at-log').innerHTML = lg.length ? 'Últimos avisos: '+lg.slice(0,5).map(x=>`#${esc(x.rental_id)} ${new Date(x.at*1000).toLocaleString([], {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})} (${(x.pct||0).toFixed(1)} %${x.message_sent?', pruebas al dueño':x.error?', mensaje falló':''})`).join(' · ') : '';
+}
+$('#sw-at').onclick=async()=>{ const on=!(state&&state.autoticket&&state.autoticket.enabled);
+  if(on && !await confirmDlg(`<b>Encender el ticket automático al terminar</b><p>Cuando un alquiler de MRR termine entregando menos de lo pagado más allá del ruido estadístico, y MRR no lo haya reembolsado, el panel guardará las pruebas (pagado · MRR · DATUM) y te mandará por Telegram el texto del ticket con el tiempo que te queda de las 12 h. Una vez por alquiler.</p><p class="muted">MRR no tiene API de tickets: el ticket lo abres tú, con el texto ya preparado.</p>`)) return;
+  try{ await api('/api/tickets/settings',{enabled:on}); toast(on?'Ticket automático encendido':'Ticket automático apagado'); refresh(); }catch(e){ toast(e.message,true); } };
+$('#at-msg').onchange=async ev=>{ const on=ev.target.checked;
+  if(on && !await confirmDlg('<b>Publicar las pruebas al dueño</b><p>Con cada aviso al terminar, el panel publicará las pruebas en el hilo de mensajes del alquiler en MRR (PUT /rental/&lt;id&gt;/message). Lo leen el dueño del rig y el soporte de MRR.</p>')){ ev.target.checked=false; return; }
+  try{ await api('/api/tickets/settings',{message_owner:on}); refresh(); }catch(e){ ev.target.checked=!on; toast(e.message,true); } };
+$('#at-early').onchange=async ev=>{ const on=ev.target.checked;
+  if(on && !await confirmDlg('<b>Avisar antes al dueño</b><p>MRR pide contactar con el dueño antes de nada. Si a medio alquiler (pasado el 25 %, rig en línea) uno va claramente corto (por debajo del 95 %, 3 σ), el panel le dejará un mensaje amable con las cifras en el hilo del alquiler, una sola vez, y te avisará por Telegram.</p>')){ ev.target.checked=false; return; }
+  try{ await api('/api/tickets/settings',{warn_early:on}); refresh(); }catch(e){ ev.target.checked=!on; toast(e.message,true); } };
+// Rentals from other markets seen on the gateway (no order here: measured only)
+function renderOthers(os){
+  const el=$('#other-rentals'); if(!el) return;
+  el.innerHTML = os.map(g=>{
+    const since=g.first_seen?new Date(g.first_seen*1000).toLocaleString([], {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):null;
+    const isP=g.source==='PyBLØCK market';
+    return `<div class="vrow oth"><div><span class="tag ${isP?'pyb':'oth'}">${esc(g.source)}</span> <b>${esc(g.worker||'(sin worker)')}</b>
+        <div class="muted mono" style="font-size:11.5px">→ ${esc(g.address||'¿?')} · ${g.connections} conexión${g.connections>1?'es':''}${g.useragents.length?' · '+esc(g.useragents.join(', ')):''}</div>
+        <div class="muted" style="font-size:12px;margin-top:4px">detectado en el gateway, sin pedido en el panel: solo se mide${isP?' · si es tuyo, añádelo en «Añadir orden de PyBLØCK» (enlace del pedido o m·…) para ver contrato, cara y veredicto':''}</div></div>
+      <div class="vexp"><span>ahora <b>${(g.th_now||0).toFixed(2)} TH/s</b></span><span title="${g.by_address?'Sin worker: shares × dificultad de las conexiones de este mercado que pagan a esta dirección'+(g.hosts&&g.hosts.length?' (desde '+esc(g.hosts.join(', '))+')':'')+(g.useragents.length?', agente '+esc(g.useragents.join(', ')):''):'Por shares × dificultad del worker '+esc(g.worker||'')} ${g.window_s&&g.window_s<3500?'desde que apareció ('+Math.round(g.window_s/60)+' min)':'en la última hora'}">${g.window_s&&g.window_s<3500?'desde que llegó':'última hora'} <b class="got">${g.th_1h!=null?g.th_1h.toFixed(2)+' TH/s':'–'}</b>${g.by_address?' <span class="muted">(por dirección)</span>':''}</span>${since?'<span class="muted">visto desde '+since+'</span>':''}</div>
+      <div><span class="verd starting">sin contrato</span>${g.user?`<div style="margin-top:6px"><button class="small" data-ownw="${esc(g.user)}" title="Es un minero tuyo (p. ej. uno que pones en un mercado y vuelve a tu gateway cuando nadie lo alquila): deja de salir como alquiler">es mío</button></div>`:''}</div></div>`; }).join('');
+  el.querySelectorAll('button[data-ownw]').forEach(b=>b.onclick=async()=>{
+    if(!await confirmDlg(`<b>Marcar como minero tuyo</b><p class="mono" style="word-break:break-all">${esc(b.dataset.ownw)}</p><p class="muted">Deja de contarse como alquiler. Se puede deshacer en «Tus mineros».</p>`)) return;
+    try{ await api('/api/own-workers',{user:b.dataset.ownw,on:true}); toast('Marcado como tuyo'); refresh(); }catch(e){ toast(e.message,true); } });
+  if(audit && audit.enabled) $('#v-title').textContent = rentTitle((audit.rentals||[]).length);
+}
+// Your own miners (own_workers / own_user_agents): shown apart, never as a rental
+function renderOwnMiners(ms){
+  const el=$('#own-miners'); if(!el) return;
+  el.innerHTML = ms.length ? '<span class="tag own">tu minero</span> '+ms.map(g=>`<b>${esc(g.worker||'(sin worker)')}</b> ${(g.th_now||0).toFixed(2)} TH/s ahora${g.th_1h!=null?' · '+g.th_1h.toFixed(2)+' TH/s la última hora':''} <span class="muted">(sin alquilar: vuelve a tu gateway${g.useragents.length?' · '+esc(g.useragents.join(', ')):''})</span>${g.user?` <button class="delbtn" data-unown="${esc(g.user)}" title="No es mío: que vuelva a salir como alquiler detectado">✕</button>`:''}`).join(' · ') : '';
+  el.querySelectorAll('button[data-unown]').forEach(b=>b.onclick=async()=>{
+    if(!await confirmDlg('<b>Dejar de tratarlo como tuyo</b><p class="muted">Volverá a salir como alquiler detectado si llega por un mercado.</p>')) return;
+    try{ await api('/api/own-workers',{user:b.dataset.unown,on:false}); refresh(); }catch(e){ toast(e.message,true); } });
+}
+
+// ---------------------------------------------------------------- P2Hash (p2hash.py)
+// Rigs listed on Nostr by PyBLØCK Hashrate Agent sellers. One rental at a time; every tranche is
+// paid in advance from the separate paying connection (NWC), only after the owner's click unless
+// automatic payment is on for that rental and both caps are set (off by default).
+let p2h=null, p2hHours={}, p2hTick=null;
+// P2Hash prices are sats of the BLAKE2b chain (XBT); MRR's (and PyBLØCK's packages) are in MRR's
+// coin. They are compared through alt_price (how many BLAKE2b coins one MRR coin buys), if set.
+function xbtUnit(){ return L().alt || 'sats XBT'; }
+function xbtToMrr(v){ return (state && state.alt_rate) ? v/state.alt_rate : null; }
+function p2hTip(L){ return 'Vendedor '+L.pubkey.slice(0,12)+'… · anuncio visto en '+L.relays+' relay'+(L.relays>1?'s':'')+' · actualizado '+new Date(L.updated*1000).toLocaleTimeString(); }
+function renderP2h(d){
+  p2h = d && d.enabled ? d : null;
+  const box=$('#p2h-box'), act=$('#p2h-active');
+  if(!box) return;
+  box.style.display = p2h ? '' : 'none';
+  if(!p2h){ act.innerHTML=''; return; }
+  const u=L().unit, open=(p2h.relays||[]).filter(r=>r.open).length;
+  $('#p2h-info').textContent = `${open}/${(p2h.relays||[]).length} relays · comprador ${p2h.buyer}…`;
+  $('#p2h-info').title = (p2h.relays||[]).map(r=>r.url+(r.open?' ✓':' ✗ '+(r.error||''))).join('\n');
+  // paying connection
+  const w=p2h.wallet||{}, b=p2h.budget;
+  $('#p2h-wallet').innerHTML = w.configured
+    ? `<span>Conexión de pago: <b class="mono">${esc(w.wallet||'?')}…</b>${w.alias?' ('+esc(w.alias)+')':''} ${w.error?'<span class="bad">'+esc(w.error)+'</span>':w.pay_method?'<span class="ok">✓ paga ofertas BOLT12 ('+esc(w.pay_method)+')</span>':'<span class="muted">comprobando…</span>'}</span>
+       ${b&&b.left!=null?`<span title="${b.source==='get_budget'?'Presupuesto de esta conexión en tu hub':'Lo que esta conexión dice que puede gastar'}">le quedan <b>${b.left.toLocaleString()}</b>${b.total?' de '+b.total.toLocaleString():''} ${esc(xbtUnit())}</span>`:'<span class="muted" title="La conexión no informa de su presupuesto">presupuesto: no lo dice</span>'}
+       <span class="ro-hide"><button class="small" id="p2h-wchg">Cambiar</button> <button class="small" id="p2h-wdel">Quitar</button></span>`
+    : `<span class="warn">Sin conexión de pago.</span> <span class="ro-hide" style="display:inline-flex;gap:6px;flex:1;min-width:280px"><input id="p2h-uri" type="password" autocomplete="off" spellcheck="false" placeholder="nostr+walletconnect://… (una app propia en tu hub, con pay y un presupuesto)" style="flex:1">
+       <button class="small p2hbtn" id="p2h-wsave">Guardar</button></span>`;
+  const ws=$('#p2h-wsave'); if(ws) ws.onclick=()=>p2hWallet($('#p2h-uri').value.trim());
+  const wc=$('#p2h-wchg'); if(wc) wc.onclick=()=>{ const v=prompt('Nueva URI nostr+walletconnect:// de la conexión que paga (no se vuelve a mostrar):'); if(v) p2hWallet(v.trim()); };
+  const wd=$('#p2h-wdel'); if(wd) wd.onclick=async()=>{ if(await confirmDlg('<b>Quitar la conexión de pago</b><p class="muted">Se borra de config.json. Sin ella no se puede alquilar en P2Hash.</p>')) p2hWallet(''); };
+  // gateway
+  $('#p2h-where').innerHTML = p2h.gateway
+    ? `Mina a tu gateway <span class="mono">${esc(p2h.gateway)}</span> como <span class="mono">${esc(p2h.address||'¿?')}.${esc(p2h.worker_prefix)}…</span> <span class="muted">(${esc(p2h.address_source||'')})</span>
+       <button class="small" id="p2h-check" title="La misma prueba que hace el vendedor antes de aceptar: subscribe + authorize a tu gateway público. Desde dentro de tu red puede fallar si el router no hace NAT loopback.">Probar gateway</button> <span id="p2h-checkres"></span>`
+    : '<span class="warn">Falta el gateway público (<span class="mono">pyblock.gateway</span> o <span class="mono">p2hash.gateway</span> en config.json).</span>';
+  const ck=$('#p2h-check'); if(ck) ck.onclick=async()=>{ $('#p2h-checkres').textContent='probando…';
+    try{ const r=await api('/api/p2hash/check'); $('#p2h-checkres').innerHTML=r.ok?'<span class="ok">✓ responde</span>':'<span class="bad">✗ '+esc(r.why||'no responde')+'</span>'; }catch(e){ $('#p2h-checkres').innerHTML='<span class="bad">'+esc(e.message)+'</span>'; } };
+  // caps and automatic payment
+  const c=p2h.caps||{}, capEl=$('#p2h-caps');
+  if(!capEl.contains(document.activeElement)) capEl.innerHTML = `<span title="Topes del pago automático (y también de los tramos que confirmes a mano). 0 = sin tope; el pago automático exige los dos.">Topes: por alquiler <input id="p2h-cap-r" type="number" min="0" step="1000" value="${c.rental_sats||0}" style="width:120px"> · por 24 h <input id="p2h-cap-d" type="number" min="0" step="1000" value="${c.day_sats||0}" style="width:120px"> ${esc(xbtUnit())} <button class="small" id="p2h-capsave">Guardar</button></span>
+    <label class="switch ${p2h.autopay?'on':''}" id="p2h-sw" title="${p2h.autopay?'Encendido: los alquileres que marques «pago automático» pagan cada tramo solos, dentro de los topes y si el gateway ve el hash':'Apagado: cada tramo espera tu clic'}"><i></i><span>pago automático de tramos: ${p2h.autopay?'encendido':'apagado'}</span></label>
+    <span class="muted">gastado en 24 h: ${(p2h.spent_24h||0).toLocaleString()} ${esc(xbtUnit())} · se paga si llega ≥ ${Math.round((p2h.min_pct||0.5)*100)} % de lo anunciado</span>`;
+  const cs=$('#p2h-capsave'); if(cs) cs.onclick=async()=>{ try{ await api('/api/p2hash/caps',{rental_sats:+$('#p2h-cap-r').value||0, day_sats:+$('#p2h-cap-d').value||0}); toast('Topes guardados'); refresh(); }catch(e){ toast(e.message,true); } };
+  const sw=$('#p2h-sw'); if(sw) sw.onclick=async()=>{ const on=!p2h.autopay;
+    if(on && !await confirmDlg(`<b>Encender el pago automático de tramos</b><p>Solo afecta a los alquileres que pidas marcando «pago automático». En ellos el panel pagará cada tramo sin preguntarte, siempre que: sea del vendedor y del alquiler en marcha, el siguiente en orden, para la oferta del anuncio, al precio anunciado (+1 %), dentro de las horas compradas y de tus topes (${(c.rental_sats||0).toLocaleString()} por alquiler, ${(c.day_sats||0).toLocaleString()} por 24 h), y que tu gateway haya visto al menos el ${Math.round((p2h.min_pct||0.5)*100)} % del hash anunciado desde el pago anterior.</p><p class="muted">Tu riesgo por alquiler es un tramo. La conexión de pago tiene además su propio presupuesto en tu hub.</p>`)) return;
+    try{ await api('/api/p2hash/autopay',{on}); toast(on?'Pago automático encendido':'Pago automático apagado'); refresh(); }catch(e){ toast(e.message,true); } };
+  // listings
+  const ref=pyb&&pyb.catalog&&pyb.catalog.mrr_ref, xu=xbtUnit();
+  document.querySelectorAll('.p2h-unit-day').forEach(e=>e.textContent=xu+'/TH/día');
+  const tb=$('#t-p2h tbody'), Ls=p2h.listings||[];
+  if(!tb.contains(document.activeElement)) tb.innerHTML = Ls.length ? Ls.map(Lg=>{
+    const eq=xbtToMrr(Lg.price_sats_th_day), vs=(ref&&eq)?(eq/ref-1):null, can=Lg.rentable&&Lg.status==='available'&&!p2h.active&&w.configured&&p2h.gateway;
+    const h=p2hHours[Lg.addr]||Math.max(Lg.min_h,1);
+    const why=!Lg.rentable?'no acepta pagos BOLT12 de agentes':Lg.status!=='available'?'el rig está '+Lg.status:p2h.active?'ya hay un alquiler P2Hash en marcha':!w.configured?'falta la conexión de pago':!p2h.gateway?'falta el gateway':'';
+    return `<tr${Lg.status==='available'&&Lg.rentable?'':' class="muted"'}><td title="${esc(p2hTip(Lg))}"><b>${esc(Lg.title||Lg.id)}</b><div class="muted mono" style="font-size:11px">${esc(Lg.pubkey.slice(0,10))}…</div></td>
+      <td>${Lg.ths.toFixed(2)}</td><td class="pc" title="${eq?'≈ '+Math.round(eq).toLocaleString()+' '+esc(u)+'/TH/día':''}">${Lg.price_sats_th_day.toLocaleString()}${eq?'<div class="muted" style="font:500 11px var(--mono)">≈ '+Math.round(eq).toLocaleString()+' '+esc(u)+'</div>':''}</td>
+      <td class="${vs==null?'':vs<=-0.02?'pg':vs<0.05?'py':'pr'}">${vs==null?'–':(vs>0?'+':'')+(vs*100).toFixed(1)+' %'}</td>
+      <td>${Math.round(Lg.tranche_s/60)} min · ${Lg.tranche_sats.toLocaleString()}</td><td>${Lg.min_h}–${Lg.max_h}</td>
+      <td><span class="verd ${Lg.status==='available'?'ok':'starting'}">${esc({available:'libre',rented:'alquilado',offline:'sin rig',stale:'sin renovar'}[Lg.status]||Lg.status)}</span></td>
+      <td class="ro-hide"><div class="row" style="flex-wrap:nowrap"><input type="number" min="${Lg.min_h}" max="${Lg.max_h}" step="1" value="${h}" style="width:64px" data-p2hh="${esc(Lg.addr)}"><button class="small p2hbtn" data-p2hrent="${esc(Lg.addr)}" ${can?'':'disabled title="'+esc(why)+'"'}>Alquilar</button></div></td></tr>`; }).join('')
+    : `<tr><td colspan="8" class="muted">Ningún rig P2Hash anunciado ahora mismo en tus relays (${esc((p2h.relays||[]).map(r=>r.url.replace(/^wss?:\/\//,'')).join(', '))}).</td></tr>`;
+  tb.querySelectorAll('input[data-p2hh]').forEach(e=>e.oninput=()=>{ p2hHours[e.dataset.p2hh]=+e.value; });
+  tb.querySelectorAll('button[data-p2hrent]').forEach(bt=>bt.onclick=()=>p2hRent(Ls.find(x=>x.addr===bt.dataset.p2hrent)));
+  // finished ones
+  const H=p2h.history||[];
+  $('#p2h-hist').innerHTML = H.length ? '<div class="muted" style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px">Últimos alquileres P2Hash</div>'+H.slice(0,6).map((h,i)=>{
+    const a=h.analysis; return `<div class="muted" style="font-size:12px">${h.ended?new Date(h.ended*1000).toLocaleString([], {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''} · <b style="color:var(--text)">${esc(h.title||'')}</b> · ${h.paid} tramo${h.paid===1?'':'s'}, ${(h.sats||0).toLocaleString()} ${esc(xbtUnit())}${a&&a.delivered_th!=null?' · gateway '+a.delivered_th.toFixed(2)+' de '+(h.ths||0).toFixed(2)+' TH/s':''} · ${esc(h.reason||'')} <button class="delbtn ro-hide" data-p2hdel="${i}" title="Quitar de esta lista">✕</button></div>`; }).join('') : '';
+  $('#p2h-hist').querySelectorAll('button[data-p2hdel]').forEach(bt=>bt.onclick=async()=>{ try{ await api('/api/p2hash/forget',{idx:+bt.dataset.p2hdel}); refresh(); }catch(e){ toast(e.message,true); } });
+  act.innerHTML = p2h.active ? p2hActive(p2h.active) : '';
+  const pb=$('#p2h-pay'); if(pb) pb.onclick=async()=>{ pb.disabled=true; pb.textContent='pagando…';
+    try{ const r=await api('/api/p2hash/pay',{n:+pb.dataset.n}); toast(r.ok?'Tramo '+pb.dataset.n+' pagado':'No se pagó: '+(r.error||''), !r.ok); }catch(e){ toast(e.message,true); } refresh(); };
+  const st=$('#p2h-stop'); if(st) st.onclick=async()=>{ if(!await confirmDlg('<b>Parar el alquiler P2Hash</b><p>Se avisa al vendedor (cancel) y no se paga ningún tramo más: el rig vuelve a su casa. Lo ya pagado no se devuelve.</p>')) return;
+    try{ await api('/api/p2hash/stop',{}); toast('Alquiler parado'); refresh(); }catch(e){ toast(e.message,true); } };
+  clearInterval(p2hTick); if(p2h.active) p2hTick=setInterval(p2hCount,1000); p2hCount();
+}
+function p2hCount(){ document.querySelectorAll('[data-until]').forEach(e=>{ const s=Math.max(0,Math.round(+e.dataset.until-Date.now()/1000)); e.textContent=s>=60?Math.floor(s/60)+'m '+(s%60)+'s':s+'s'; e.className=s<30?'bad':''; }); }
+function p2hActive(r){
+  const a=r.analysis, gwv=a&&a.delivered_th!=null?a.delivered_th:r.gateway_th, mx=Math.max(0.001,r.ths||0,gwv||0);
+  const bar=(cls,lab,v,tip)=>`<div class="vb ${cls}"${tip?' title="'+esc(tip)+'"':''}><span>${lab}</span><div class="tr"><i style="width:${((v||0)/mx*100).toFixed(1)}%"></i></div><b>${v==null?'–':v.toFixed(2)}</b></div>`;
+  const left=r.ends?(r.ends-Date.now()/1000)/3600:null, pend=r.pending;
+  const fc=a&&a.delivered_th!=null?face({advertised_th:r.ths, mrr_average_th:null, analysis:a}, 'el vendedor'):'';
+  const tr=(r.pays||[]).map(p=>{ const t=(r.tranches||[]).find(x=>x.n===p.n); return `#${p.n} <b>${p.sats.toLocaleString()}</b> ${esc(xbtUnit())} ${new Date(p.at*1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}${t?' · gateway <b>'+t.ths.toFixed(2)+'</b> TH/s · vendedor '+t.seller_shares+' shares':''}`; }).reverse().join('<br>');
+  return `<div class="vrow p2h"><div><span class="tag p2h">P2Hash</span> <b>${esc(r.title||'')}</b> ${r.auto?'<span class="tag ext" title="Paga cada tramo solo, dentro de tus topes y si el gateway ve el hash">pago automático</span>':'<span class="tag ext" title="Cada tramo espera tu clic">confirmas cada tramo</span>'}
+      <div class="muted mono" style="font-size:11.5px">${esc(r.worker||'')} · ${esc(r.status_label||r.status)}${r.rental_id?' · alquiler '+esc(r.rental_id.slice(0,10)):''}</div>
+      <div class="vexp"><span>anunciado <b>${(r.ths||0).toFixed(2)} TH/s</b> × ${r.hours} h</span><span>${r.paid}/${r.n_max} tramos · <b>${(r.sats||0).toLocaleString()}</b> de ${(r.cap||0).toLocaleString()} ${esc(xbtUnit())}${r.fees_sats?' (+'+r.fees_sats+' comisión)':''}</span></div>
+      ${priceLine(r.price_sats_th_day, ((p2h.listings||[]).find(x=>x.addr===r.listing)||{}).price_sats_th_day, 'Precio del anuncio (tramo de '+Math.round(r.tranche_s/60)+' min = '+(r.tranche_sats||0).toLocaleString()+' '+xbtUnit()+')', 'Precio que anuncia ahora el mismo rig', null, xbtUnit())}
+      <div class="addr">→ ${esc(r.address||'')} · ${esc(r.gateway||'')}</div>
+      ${pend?`<div class="p2hpend">Tramo <b>${pend.n}</b> de ${r.n_max}: <b>${pend.sats.toLocaleString()} ${esc(xbtUnit())}</b> · el vendedor espera <b data-until="${pend.at+pend.due_s}"></b>
+        <div class="row" style="margin-top:6px"><button class="small p2hbtn ro-hide" id="p2h-pay" data-n="${pend.n}">Pagar tramo ${pend.n}</button></div></div>`:''}
+      ${r.next_due&&!pend?'<div class="muted" style="font-size:12px;margin-top:4px">próximo cobro hacia las '+new Date(r.next_due*1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+'</div>':''}
+      ${(r.refused||[]).length?'<div class="warn" style="font-size:12px">'+esc(r.refused[r.refused.length-1].why)+'</div>':''}
+      ${tr?'<div class="p2htr">'+tr+'</div>':''}</div>
+    <div class="vmid"><div class="left ${(left!=null&&left<1)?'soon':''}"><b>${left!=null?fmtLeft(Math.max(0,left)):'–'}</b><span>quedan</span></div>
+      ${fc?'<div class="vface">'+fc+'</div>':''}
+      <div class="vbars">${bar('c','anunciado',r.ths)}${bar('d','gateway',gwv, a?'Medido en el gateway por shares del worker '+r.worker+' desde el primer pago · ahora mismo '+(r.gateway_th||0).toFixed(2)+' TH/s':'Lo que marca el gateway ahora mismo')}</div></div>
+    <div><span class="verd ${r.status==='mining'?'ok':'pend'}">${esc(r.status_label||r.status)}</span>${a?' <span class="verd '+a.verdict+'" title="'+esc(VHELP[a.verdict]||'')+'">'+(VTXT[a.verdict]||a.verdict)+'</span>':''}
+      <div class="row" style="margin-top:6px"><button class="small danger ro-hide" id="p2h-stop">Parar</button></div></div></div>`;
+}
+async function p2hWallet(uri){
+  try{ const r=await api('/api/p2hash/wallet',{uri}); toast(uri?(r.wallet&&r.wallet.error?'Guardada, pero: '+r.wallet.error:'Conexión de pago guardada'):'Conexión de pago quitada', !!(r.wallet&&r.wallet.error)); refresh(); }
+  catch(e){ toast(e.message,true); }
+}
+async function p2hRent(Lg){
+  const hours=+(p2hHours[Lg.addr]||Math.max(Lg.min_h,1));
+  let q; try{ q=await api('/api/p2hash/quote',{addr:Lg.addr, hours}); }catch(e){ toast(e.message,true); return; }
+  const autoOk=p2h.autopay_allowed, u=L().unit;
+  if(!await confirmDlg(`<b><span class="tag p2h">P2Hash</span> Alquilar ${esc(Lg.title||Lg.id)}</b>
+    <p>${Lg.ths.toFixed(2)} TH/s × ${hours} h · <b>${q.tranches} tramos</b> de ${Math.round(Lg.tranche_s/60)} min × ${q.per_tranche.toLocaleString()} ${esc(xbtUnit())} = hasta <b>${q.total.toLocaleString()} ${esc(xbtUnit())}</b> (+ comisiones de ruta)</p>
+    ${q.why?'<p class="bad">'+esc(q.why)+'</p>':''}
+    <p>Gateway: <span class="mono">${esc(p2h.gateway)}</span> · worker propio <span class="mono">${esc(p2h.worker_prefix)}…</span></p>
+    <p><label style="display:inline-flex;gap:8px;align-items:center"><input type="checkbox" id="p2h-auto" style="width:auto" ${autoOk?'':'disabled'}> pago automático de los tramos</label>
+      <span class="muted" style="display:block;font-size:12px">${autoOk?'Pagará cada tramo solo, dentro de tus topes y si el gateway ve el hash.':'Apagado o sin topes: cada tramo te esperará (unos 2 min) y te avisará por Telegram.'}</span></p>
+    <p class="muted">Se pide al vendedor; si acepta, el primer tramo se paga por adelantado${autoOk?'':' cuando lo confirmes'}. Paras cuando quieras; lo pagado no vuelve. Tu riesgo: un tramo.</p>`)) return;
+  const auto=!!($('#p2h-auto')&&$('#p2h-auto').checked);
+  try{ await api('/api/p2hash/rent',{addr:Lg.addr, hours, auto}); toast('P2Hash: pedido al vendedor'); refresh(); }catch(e){ toast(e.message,true); }
+}
 
 // ---------------------------------------------------------------- PyBLØCK (pyblock.py)
 let pyb=null, pybCatAt=null, pybSel={}, pybPayRef=null, pybPayTimer=null, pybCount=null, pybQR=null;
@@ -782,7 +1038,7 @@ const PAYM={ln:'⚡ LN '+'(SHA-256)', xbtln:'⚡ LN BLAKE2b (Laguz)', xbt:'on-ch
 const PYB_FINAL=['completed','expired','cancelled','failed','not_found'];
 const pct = v => v==null ? '–' : (v>0?'+':'')+(v*100).toFixed(0)+' %';
 function pybLive(){ return ((pyb&&pyb.orders)||[]).filter(o=>o.live); }
-function rentTitle(n){ const k=pybLive().length; return (n===1?'1 alquiler':n+' alquileres')+' MRR'+(k?' + '+k+' PyBLØCK':''); }
+function rentTitle(n){ const k=pybLive().length, o=((state&&state.others)||[]).length, h=(p2h&&p2h.active)?1:0; return (n===1?'1 alquiler':n+' alquileres')+' MRR'+(k?' + '+k+' PyBLØCK':'')+(h?' + 1 P2Hash':'')+(o?' + '+o+' detectado'+(o>1?'s':'')+' en el gateway':''); }
 function pybCotejo(mrrTh){
   const t=pyb&&pyb.totals; if(!t||!t.active) return '';
   return `<div class="runway"><span class="tag pyb">PyBLØCK</span> ${t.active} activo${t.active>1?'s':''}: <b style="color:var(--pyb)">${t.th.toFixed(1)} TH/s</b> contratados · PyBLØCK dice ${t.live_ths.toFixed(1)} · gateway ${(t.delivered_th||t.gateway_th).toFixed(1)} TH/s
@@ -874,8 +1130,9 @@ function renderPybOrders(){
   const b=(cls,lab,v,ex,tip)=>`<div class="vb ${cls}"${tip?' title="'+esc(tip)+'"':''}><span>${lab}</span><div class="tr"><i style="width:${((v||0)/mx*100).toFixed(1)}%"></i></div><b>${v==null?'–':v.toFixed(2)}${ex||''}</b></div>`;
   return os.map(o=>{
     const when=new Date(o.created*1000).toLocaleString([], {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
-    const name=o.external?'pedido externo':o.qty+'× '+esc(o.package);
-    const ext=o.external?' <span class="tag ext" title="Hecho fuera del panel (web o app de PyBLØCK) y añadido aquí">externo</span>':'';
+    const name=esc(o.name||(o.external?'pedido externo':o.qty+'× '+o.package));
+    const ext=o.market?' <span class="tag ext" title="Alquiler del market de PyBLØCK (rigs de mineros), hecho en su web y añadido aquí">market</span>'+(o.estimated?' <span class="tag ext" title="Añadido con el id del minero (m·…), sin el enlace secreto del pedido: TH/s verificadas del rig, fin del alquiler según el market y precio de lista. Pega el enlace del pedido para tener el contrato exacto.">estimado</span>':'')
+      :o.external?' <span class="tag ext" title="Hecho fuera del panel (web o app de PyBLØCK) y añadido aquí">externo</span>':'';
     if(o.unpaid) return `<div class="vrow pyb dim"><div><span class="tag pyb">PyBLØCK</span>${ext} <b>${name}</b> · ${(o.th||0).toFixed(2)} TH/s × ${o.hours} h · ${(o.total_sats||0).toLocaleString()} ${esc(L().unit)}
         <div class="muted mono" style="font-size:11.5px">${when} · ${esc(PAYM[o.pay]||o.pay)}</div></div>
       <div><span class="verd unpaid" title="La factura caducó sin pagarse: no hubo alquiler">${esc(o.status_label)}</span>
@@ -895,6 +1152,7 @@ function renderPybOrders(){
         ${priceLine(o.sat_th_day, o.renew_sat_th_day, 'Lo que pagaste ('+(o.total_sats||0).toLocaleString()+' '+L().unit+') entre '+(o.th||0)+' TH/s × '+o.hours+' h',
           'El paquete más barato que PyBLØCK vende ahora con las mismas TH/s por unidad, horas y unidades ('+(o.renew_sat_th_day==null?'ahora no hay ninguno':'precio final, sin comisión aparte')+')')}
         <div class="addr">→ ${esc(o.address||'¿?')}${o.gateway?' · '+esc(o.gateway):''}</div>
+        ${o.refund_sats?'<div class="ok" style="font-size:12px">reembolso de PyBLØCK: '+o.refund_sats.toLocaleString()+' sats'+(o.refund_status?' ('+esc(o.refund_status)+')':'')+'</div>':''}
         ${o.error?'<div class="warn" style="font-size:12px">'+esc(o.error)+'</div>':''}</div>
       <div class="vmid"><div class="left ${(o.left_h!=null&&o.left_h<6)?'soon':''}" title="Tiempo que le queda (según PyBLØCK)"><b>${o.left_h!=null?fmtLeft(o.left_h):'–'}</b><span>quedan</span></div>
         ${o.live?'<div class="vface">'+fc+star+'</div>':''}

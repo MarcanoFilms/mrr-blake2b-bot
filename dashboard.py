@@ -25,6 +25,8 @@ sys.path.insert(0, HERE)
 import mrr_bot  # noqa: E402
 import audit as audit_mod  # noqa: E402
 import pyblock as pyb_mod  # noqa: E402
+import tickets as tickets_mod  # noqa: E402
+import p2hash as p2h_mod  # noqa: E402
 
 WWW = os.path.join(HERE, "www")
 HISTORY_PATH = os.path.join(HERE, "history.json")
@@ -44,6 +46,18 @@ DASH_DEFAULTS = {
     # optional second unit for prices: {"label": "...", "url": "...", "path": "a.b", "invert": false}
     # the JSON value at `path` is how many of that coin one MRR coin buys (invert: the reverse)
     "alt_price": {},
+    # rentals that reach the gateway from other markets, told apart by a substring of the
+    # worker, user agent, reverse DNS or stratum user (case-insensitive). Shown as "detected".
+    # your own miners, never shown as a rental even when they arrive through a market's proxy
+    # (a rig you list on PyBLØCK market comes back to your gateway when nobody rents it):
+    # "worker" or "address.worker" (exact), and user agent substrings
+    "own_workers": [],
+    "own_user_agents": [],
+    "other_sources": [
+        {"name": "p2phash", "match": ["p2phash"]},
+        {"name": "TideHash", "match": ["tidehash"]},
+        {"name": "RouteHash", "match": ["routehash"]},
+    ],
 }
 EDITABLE_KNOBS = {
     "reserve_btc": float, "max_spend_per_run_btc": float, "max_concurrent_rentals": int,
@@ -61,6 +75,8 @@ AUDIT = [None]            # audit.Audit instance when enabled
 AUDIT_PREFIX = ["mrr"]
 PYB = [None]              # pyblock.PyBlock instance when enabled
 PYB_PREFIX = ["pyb"]
+P2H = [None]              # p2hash.P2Hash instance when enabled
+P2H_PREFIX = ["p2h"]
 LOGIN_HTML = """<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MRR Command Center</title><link rel="icon" href="/favicon.png">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;600&family=JetBrains+Mono&display=swap">
@@ -184,6 +200,27 @@ def rdns(ip):
     return name
 
 
+def classify_source(entry, sources):
+    """Label of the first configured other source whose substring is in the connection's
+    worker, user agent, reverse DNS or stratum user ("" if none)."""
+    hay = " ".join(str(entry.get(k) or "") for k in ("worker", "useragent", "host", "user")).lower()
+    for src in sources or []:
+        for m in src.get("match") or []:
+            if m and str(m).lower() in hay:
+                return f"{src.get('name') or m} rental"
+    return ""
+
+
+def is_own_miner(entry, own_workers, own_uas):
+    user, worker = str(entry.get("user") or ""), str(entry.get("worker") or "")
+    for w in own_workers or []:
+        w = str(w).strip()
+        if w and ((("." in w) and user == w) or (("." not in w) and worker == w)):
+            return True
+    ua = str(entry.get("useragent") or "").lower()
+    return any(u and str(u).lower() in ua for u in own_uas or [])
+
+
 def classify_host(name, ip):
     if "miningrigrentals" in name:
         return "MRR proxy"
@@ -194,7 +231,7 @@ def classify_host(name, ip):
     return ""
 
 
-def parse_clients(html, own_addresses):
+def parse_clients(html, own_addresses, sources=None, own_workers=None, own_uas=None):
     rows = re.findall(r"<TR>(.*?)</TR>", html, re.S)
     clients = []
     for row in rows:
@@ -223,6 +260,8 @@ def parse_clients(html, own_addresses):
             entry["label"] = "MRR proxy"   # worker given by the audit; the proxies' rDNS is not always set
         if not entry["label"] and re.fullmatch(re.escape(PYB_PREFIX[0]) + r"[0-9a-f]{6}", worker or ""):
             entry["label"] = "PyBLOCK rental"   # worker given to PyBLØCK orders made here
+        if re.fullmatch(re.escape(P2H_PREFIX[0]) + r"[0-9a-f]{6}", worker or ""):
+            entry["label"] = "P2Hash rental"    # worker given to P2Hash rentals made here
         entry.update({
             "subscribed": True, "user": user, "address": addr, "worker": worker,
             "own": (addr in own_addresses) if own_addresses else None,
@@ -236,6 +275,14 @@ def parse_clients(html, own_addresses):
             "coinbase": strip_tags(cells[9]) if len(cells) > 9 else "",
             "useragent": strip_tags(cells[10]) if len(cells) > 10 else "",
         })
+        if is_own_miner(entry, own_workers, own_uas):
+            entry.update(own_miner=True, own=True, label="tu minero")   # never a rental
+            clients.append(entry)
+            continue
+        if not entry["label"] or entry["label"] == "LAN":
+            entry["label"] = classify_source(entry, sources) or entry["label"]
+        if not entry["label"] and "pyblock" in entry["useragent"].lower():
+            entry["label"] = "PyBLOCK rental"   # PyBLØCK market's proxy (user agent pyblock-market/…)
         clients.append(entry)
     return clients
 
@@ -261,7 +308,8 @@ def parse_status(html):
 def poll_gateway():
     c = cfg()
     try:
-        clients = parse_clients(gateway_get(c, "/clients"), c["own_addresses"])
+        clients = parse_clients(gateway_get(c, "/clients"), c["own_addresses"], c.get("other_sources"),
+                                c.get("own_workers"), c.get("own_user_agents"))
         status = parse_status(gateway_get(c, "/"))
         total = sum(x.get("hashrate_th", 0) for x in clients)
         subs = [x for x in clients if x["subscribed"]]
@@ -348,13 +396,17 @@ def mrr_overview(force=False):
                 "paid": d["price"].get("paid"), "currency": d["price"].get("currency"),
                 "maxhours": d["rig"].get("maxhours"), "ended": d.get("ended"),
                 "extensions": bool(d["rig"].get("extensions")),
+                # MRR's own online flag for the rig (the auto-ticket only acts while it is online)
+                "rig_online": (bool((d["rig"].get("status") or {}).get("online"))
+                               if isinstance(d["rig"].get("status"), dict) else None),
+                "was_refunded": d.get("was_refunded"),
                 "paid_sat_th_day": paid_sat_th_day(d["price"].get("paid"), mrr_bot.to_th(d["hashrate"]["advertised"]),
                                                    length, c.get("fee_rate")),
             })
         try:
             prices = rig_prices([r["rig_id"] for r in rentals], c)
         except Exception as e:    # the renewal price is a nicety: never lose the overview over it
-            prices = {}
+            prices = dict(_rig_prices["data"])   # keep the last known ones (MRR limits to 100 calls/min)
             print(f"[rig prices failed: {e}]", file=sys.stderr, flush=True)
         for r in rentals:
             r["renew_sat_th_day"] = prices.get(str(r["rig_id"]))
@@ -665,6 +717,226 @@ def gateway_clients():
         return list((cache["gateway"]["data"] or {}).get("clients") or [])
 
 
+def pyb_finished(rec):
+    """A paid PyBLØCK order ended: judge it whole and keep it in the history next to MRR's."""
+    if not AUDIT[0]:
+        return
+    ends, hours, th = rec.get("ends_at"), rec.get("hours"), rec.get("th")
+    if not ends or not hours or not th:
+        return
+    start = rec.get("started_at") or (ends - float(hours) * 3600)
+    who = rec.get("worker") or rec.get("seen_workers") or None
+    a = pyb_analyse(who, start, min(ends, time.time()), th) if who else None
+    name = pyb_mod.PyBlock.display_name(rec)
+    AUDIT[0].add_history({
+        "rental_id": "pyb-" + str(rec.get("ref")), "rig_id": None, "rig_name": f"PyBLØCK {name}".strip(),
+        "start_unix": int(start), "end_unix": int(ends), "advertised_th": float(th),
+        "mrr_average_th": rec.get("live_ths"),                # what PyBLØCK said
+        "delivered_th": a and a["delivered_th"], "pct": a and a["pct"],
+        "verdict": a["verdict"] if a else "none", "shares": a and a["shares"], "expected_shares": a and a["expected_shares"],
+        "paid": str(rec.get("total_sats") or ""), "currency": "sats", "address": None,
+        "worker": a and a["worker"], "finished": int(time.time()), "source": "pyblock"})
+
+
+# ----------------------------------------------------------------------------- P2Hash
+def p2h_measure(worker, start, end):
+    """Accepted work (difficulty-1 units) of a worker on the gateway: what P2Hash pays against."""
+    if not AUDIT[0]:
+        return 0.0
+    return AUDIT[0]._work(worker, start, end)[0]
+
+
+def p2h_address():
+    if PYB[0]:
+        return PYB[0].address()
+    a = (cfg().get("rent_address") or "").strip()
+    return (a, "config") if a else ("", "")
+
+
+def p2h_finished(s):
+    """A P2Hash rental that mined ended: keep it in the history next to MRR's."""
+    if not AUDIT[0] or not s.get("started"):
+        return
+    a = s.get("analysis") or {}
+    AUDIT[0].add_history({
+        "rental_id": "p2h-" + str(s.get("rental_id") or s.get("worker")), "rig_id": None,
+        "rig_name": f"P2Hash {s.get('title') or ''}".strip(), "start_unix": int(s["started"]),
+        "end_unix": int(s.get("ended") or time.time()), "advertised_th": float(s.get("ths") or 0),
+        "mrr_average_th": None, "delivered_th": a.get("delivered_th"), "pct": a.get("pct"),
+        "verdict": a.get("verdict") or "none", "shares": a.get("shares"), "expected_shares": a.get("expected_shares"),
+        "paid": str(s.get("sats") or ""), "currency": "sats", "address": None, "worker": s.get("worker"),
+        "finished": int(time.time()), "source": "p2hash"})
+
+
+def write_config_key(path, value):
+    """Set one (dotted) key of config.json, keeping its 600 mode."""
+    with open(mrr_bot.CONFIG_PATH) as f:
+        raw = json.load(f)
+    d = raw
+    keys = path.split(".")
+    for k in keys[:-1]:
+        d = d.setdefault(k, {})
+    d[keys[-1]] = value
+    tmp = mrr_bot.CONFIG_PATH + ".tmp"
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        json.dump(raw, f, indent=1)
+    os.chmod(tmp, 0o600)
+    os.replace(tmp, mrr_bot.CONFIG_PATH)
+
+
+def p2h_view():
+    v = P2H[0].view()
+    a = v.get("active")
+    if a and a.get("worker"):
+        a["gateway_th"] = sum(c.get("hashrate_th") or 0 for c in gateway_clients() if c.get("worker") == a["worker"])
+    return v
+
+
+def mask_address(a):
+    a = str(a or "")
+    return a if len(a) < 14 else a[:6] + "…" + a[-4:]
+
+
+def other_rentals():
+    """Hashrate that reaches the gateway from rental markets the panel has no order for:
+    PyBLØCK market connections (their proxy) that are not one of our PyBLØCK orders, and the
+    configured other sources (p2phash, TideHash, RouteHash…). Grouped by source and worker,
+    with what the gateway gets now and, by shares, over the last hour."""
+    clients = gateway_clients()
+    mrr_re = re.compile(re.escape(AUDIT_PREFIX[0]) + r"\d+$")
+    known = set()
+    if AUDIT[0]:
+        known |= {w.get("worker") for w in AUDIT[0].workers().values() if w.get("worker")}
+    if PYB[0]:
+        with PYB[0].lock:
+            for o in PYB[0].state["orders"]:
+                if o.get("worker"):
+                    known.add(o["worker"])
+                known |= set(o.get("seen_workers") or [])
+    groups = {}
+    for cl in clients:
+        lab = cl.get("label") or ""
+        if not cl.get("subscribed") or not (lab.endswith(" rental") or cl.get("own_miner")):
+            continue
+        w = cl.get("worker") or ""
+        if (w and (w in known or mrr_re.match(w))) or re.fullmatch(re.escape(PYB_PREFIX[0]) + r"[0-9a-f]{6}", w):
+            continue
+        if re.fullmatch(re.escape(P2H_PREFIX[0]) + r"[0-9a-f]{6}", w) or audit_mod.sample_key(cl) in known:
+            continue      # a P2Hash rental of the panel, or a PyBLØCK order measured by its address
+        src = ("own" if cl.get("own_miner") else "PyBLØCK market" if lab == "PyBLOCK rental"
+               else lab[:-len(" rental")])
+        g = groups.setdefault((src, w, cl.get("address") or ""), {
+            "source": src, "worker": w, "address": mask_address(cl.get("address")), "th_now": 0.0,
+            "connections": 0, "useragents": set(), "hosts": set(), "own": cl.get("own"),
+            "own_miner": bool(cl.get("own_miner")), "user": cl.get("user") or "",
+            # what its work is stored under: the worker, or "@source:address" when it has none
+            "key": audit_mod.sample_key(cl)})
+        g["th_now"] += cl.get("hashrate_th") or 0
+        g["connections"] += 1
+        if cl.get("useragent"):
+            g["useragents"].add(cl["useragent"])
+        if cl.get("host"):
+            g["hosts"].add(cl["host"])
+    now = time.time()
+    out = []
+    for g in groups.values():
+        g["useragents"] = sorted(g["useragents"])
+        g["hosts"] = sorted(g["hosts"])
+        g["th_1h"] = g["first_seen"] = None
+        key = g.pop("key")
+        g["by_address"] = bool(key and not g["worker"])
+        if AUDIT[0] and key:
+            try:
+                # since it was first seen when that is less than an hour ago (else it would read low)
+                first = AUDIT[0].first_seen(key, now - 7 * 86400)
+                since = max(now - 3600, first or now - 3600)
+                work, shares, _, _, _ = AUDIT[0]._work(key, since, now)
+                span = max(now - since, AUDIT[0].poll)
+                g["th_1h"] = work * audit_mod.HASHES_PER_DIFF / span / 1e12
+                g["shares_1h"] = shares
+                g["window_s"] = int(span)
+                g["first_seen"] = first
+            except Exception as e:
+                print(f"[other rentals measure failed: {e}]", file=sys.stderr, flush=True)
+        out.append(g)
+    return sorted(out, key=lambda g: -(g["th_1h"] or g["th_now"]))
+
+
+def _others_split():
+    """Detected rentals and your own miners (shown apart, never as a rental)."""
+    allg = other_rentals()
+    return {"others": [g for g in allg if not g["own_miner"]], "own_miners": [g for g in allg if g["own_miner"]]}
+
+
+def ticket_draft(rental_id):
+    """The evidence text for MRR's ticket, for an active rental or one in the history."""
+    rid = str(rental_id)
+    data, _ = mrr_overview()
+    r = next((x for x in ((data or {}).get("rentals") or []) if str(x.get("id")) == rid), None)
+    if r and AUDIT[0]:
+        v = AUDIT[0].view([r])
+        a = (v["rentals"][0] if v["rentals"] else {}).get("analysis")
+        return {"active": True, "text": tickets_mod.evidence(r, a), "url": f"{tickets_mod.MRR}/rental/{rid}",
+                "end_unix": r.get("end_unix")}
+    h = next((x for x in (AUDIT[0].history()["history"] if AUDIT[0] else []) if str(x["rental_id"]) == rid), None)
+    if not h or (h.get("source") or "mrr") != "mrr":
+        raise ValueError(f"rental {rid} not found")
+    r, a = tickets_mod.from_history(h)
+    try:
+        api = mrr_api(cfg())
+        try:
+            was, why = tickets_mod.refunded(api, rid)
+        finally:
+            mrr_bot.save_state(api.state)
+    except Exception:
+        was, why = None, ""
+    return {"active": False, "text": tickets_mod.evidence(r, a, finished=True), "url": f"{tickets_mod.MRR}/rental/{rid}",
+            "end_unix": h["end_unix"], "refunded": was, "refund_info": why}
+
+
+def set_own_worker(user, on=True):
+    """Add (or remove) "address.worker" to own_workers: one of your miners, never a rental."""
+    user = str(user or "").strip()
+    if not re.fullmatch(r"[A-Za-z0-9]{1,90}(\.[A-Za-z0-9_\-.]{1,64})?", user):
+        raise ValueError("worker no válido")
+    with open(mrr_bot.CONFIG_PATH) as f:
+        raw = json.load(f)
+    cur = [w for w in (raw.get("own_workers") or []) if w != user]
+    if on:
+        cur.append(user)
+    raw["own_workers"] = cur
+    tmp = mrr_bot.CONFIG_PATH + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(raw, f, indent=1)
+    os.chmod(tmp, 0o600)
+    os.replace(tmp, mrr_bot.CONFIG_PATH)
+    return cur
+
+
+def ticket_loop():
+    """Auto-ticket pass every 2 min (does nothing while its switch is off)."""
+    while True:
+        time.sleep(120)
+        try:
+            if not AUDIT[0]:
+                continue
+            c = cfg()
+            data, _ = mrr_overview()
+            rentals = (data or {}).get("rentals") or []
+            done = tickets_mod.check(AUDIT[0], rentals, lambda: mrr_api(cfg()), mrr_bot.telegram, c,
+                                     log=lambda m: print(m, file=sys.stderr, flush=True))
+            if done:
+                st = mrr_bot.load_state()
+                st.setdefault("actions", []).extend({
+                    "at": mrr_bot.now_utc().strftime("%Y-%m-%d %H:%M:%S UTC"), "ok": True,
+                    "summary": f"AUTO-TICKET rental {rid}: evidence kept, notice sent",
+                    "action": {"type": "autoticket", "rental": rid}} for rid in done)
+                mrr_bot.save_state(st)
+        except Exception as e:     # never take the dashboard down
+            print(f"[autoticket failed: {e}]", file=sys.stderr, flush=True)
+
+
 # ----------------------------------------------------------------------------- systemd
 def sysctl(*args, timeout=20):
     r = subprocess.run(["systemctl", "--user", *args], capture_output=True, text=True, timeout=timeout)
@@ -705,7 +977,7 @@ def gateway_log(lines=40):
 
 # ----------------------------------------------------------------------------- http
 class Handler(BaseHTTPRequestHandler):
-    server_version = "mrr-dashboard/1.0"
+    server_version = "mrr-dashboard/1.4.2"
 
     def log_message(self, fmt, *args):
         if "/api/" not in (args[0] if args else ""):
@@ -816,6 +1088,10 @@ class Handler(BaseHTTPRequestHandler):
                                "alt": (c.get("alt_price") or {}).get("label")},
                     "alt_rate": alt_rate()[0],
                     "pyblock": PYB[0].view() if PYB[0] else {"enabled": False},
+                    "p2hash": p2h_view() if P2H[0] else {"enabled": False},
+                    **_others_split(),
+                    "autoticket": (dict(tickets_mod.switches(AUDIT[0]), settings=tickets_mod.settings(c),
+                                        log=AUDIT[0].tickets(100)) if AUDIT[0] else None),
                 })
             if url.path == "/api/audit":
                 if not AUDIT[0]:
@@ -827,10 +1103,25 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(market_view(float(b) if b else None))
             if url.path == "/api/history":
                 return self._json(AUDIT[0].history() if AUDIT[0] else {"history": [], "favorites": []})
+            if url.path == "/api/ticket-draft":
+                return self._json(ticket_draft(q.get("id", [""])[0]))
+            if url.path == "/api/tickets":
+                if not AUDIT[0]:
+                    return self._json({"enabled": False})
+                return self._json(dict(tickets_mod.switches(AUDIT[0]), settings=tickets_mod.settings(cfg()),
+                                       log=AUDIT[0].tickets(50)))
             if url.path == "/api/rig-graph":
                 return self._json(rig_graph(int(q["id"][0]), int(q.get("hours", ["24"])[0])))
             if url.path == "/api/pyblock":
                 return self._json(PYB[0].view(force="force" in q) if PYB[0] else {"enabled": False})
+            if url.path == "/api/p2hash":
+                return self._json(p2h_view() if P2H[0] else {"enabled": False})
+            if url.path == "/api/p2hash/check" and P2H[0]:
+                host, port = P2H[0].gateway()
+                addr, _ = p2h_address()
+                if not host or not addr:
+                    return self._json({"ok": False, "why": "falta el gateway público o la address"})
+                return self._json(p2h_mod.probe_gateway(host, port, f"{addr}.{P2H_PREFIX[0]}check"))
             if url.path == "/api/pyblock/gateway-test" and PYB[0]:
                 return self._json(PYB[0].gateway_test(force="force" in q))
             if url.path == "/api/pyblock/open" and PYB[0]:
@@ -864,7 +1155,8 @@ class Handler(BaseHTTPRequestHandler):
         try:
             c = cfg()
             if c.get("read_only") and (self.path in ("/api/bot", "/api/config", "/api/rent", "/api/rent-address",
-                                                     "/api/pyblock/order") or (
+                                                     "/api/pyblock/order", "/api/tickets/settings", "/api/own-workers")
+                                     or self.path.startswith("/api/p2hash/") or (
                     self.path == "/api/extend" and not body.get("quote_only"))):
                 return self._json({"ok": False, "error": "read-only dashboard (read_only in config.json)"}, 403)
             if not c.get("bot_ui") and self.path in ("/api/bot", "/api/config"):
@@ -874,6 +1166,21 @@ class Handler(BaseHTTPRequestHandler):
                     return self._json({"error": "audit is off"}, 400)
                 AUDIT[0].favorite(int(body["rig"]), body.get("name"), bool(body.get("on", True)))
                 return self._json({"ok": True})
+            if self.path == "/api/history/delete":
+                if not AUDIT[0]:
+                    return self._json({"error": "audit is off"}, 400)
+                n = AUDIT[0].delete_history(str(body.get("rental_id") or ""))
+                return self._json({"ok": n > 0, "deleted": n} if n else {"ok": False, "error": "no está en el historial"},
+                                  200 if n else 404)
+            if self.path == "/api/tickets/settings":
+                if not AUDIT[0]:
+                    return self._json({"error": "audit is off"}, 400)
+                sw = tickets_mod.set_switches(AUDIT[0], enabled=body.get("enabled"), message_owner=body.get("message_owner"),
+                                              warn_early=body.get("warn_early"))
+                print(f"[autoticket] switches now {sw}", file=sys.stderr, flush=True)
+                return self._json(dict(ok=True, **sw))
+            if self.path == "/api/own-workers":
+                return self._json({"ok": True, "own_workers": set_own_worker(body.get("user"), bool(body.get("on", True)))})
             if self.path == "/api/rent-address":
                 return self._json({"ok": True, "rent_address": set_rent_address(body.get("address"))})
             if self.path == "/api/bot":
@@ -916,6 +1223,43 @@ class Handler(BaseHTTPRequestHandler):
                     return self._json({"ok": False, "error": str(e), "retryable": e.retryable,
                                        "status": e.status}, 409 if not e.retryable else 503)
                 return self._json({"error": "not found"}, 404)
+            if self.path.startswith("/api/p2hash/"):
+                if not P2H[0]:
+                    return self._json({"ok": False, "error": "P2Hash está desactivado (p2hash.enabled)"}, 400)
+                p = P2H[0]
+                try:
+                    if self.path == "/api/p2hash/quote":
+                        L = next((x for x in p.market() if x["addr"] == body.get("addr")), None)
+                        if not L:
+                            return self._json({"ok": False, "error": "ese anuncio ya no está"}, 404)
+                        p.budget()
+                        return self._json(dict(ok=True, **p.quote(L, float(body.get("hours") or 0), bool(body.get("auto")))))
+                    if self.path == "/api/p2hash/rent":
+                        return self._json({"ok": True, "rental": p.rent(str(body.get("addr") or ""), float(body.get("hours") or 0),
+                                                                       bool(body.get("auto")))})
+                    if self.path == "/api/p2hash/pay":
+                        return self._json(dict(p.confirm(int(body.get("n") or 0))))
+                    if self.path == "/api/p2hash/stop":
+                        return self._json({"ok": p.stop()})
+                    if self.path == "/api/p2hash/wallet":
+                        try:
+                            info = p.set_wallet(body.get("uri") or "", lambda u: write_config_key("p2hash.nwc", u))
+                        except ValueError as e:
+                            return self._json({"ok": False, "error": str(e)}, 400)
+                        return self._json({"ok": True, "wallet": {k: v for k, v in info.items() if k != "at"}})
+                    if self.path == "/api/p2hash/caps":
+                        return self._json({"ok": True, "caps": p.set_caps(body.get("rental_sats"), body.get("day_sats")),
+                                           "autopay": p.state.get("autopay")})
+                    if self.path == "/api/p2hash/autopay":
+                        on = p.set_autopay(bool(body.get("on")))
+                        print(f"[p2hash] autopay now {on}", file=sys.stderr, flush=True)
+                        return self._json({"ok": True, "autopay": on})
+                    if self.path == "/api/p2hash/forget":
+                        p.forget(int(body.get("idx")))
+                        return self._json({"ok": True})
+                except p2h_mod.RentError as e:
+                    return self._json({"ok": False, "error": str(e)}, 409)
+                return self._json({"error": "not found"}, 404)
             if self.path == "/api/gateway/kick":
                 status = gateway_post_cmd(cfg(), {"cmd": "kill_client", "tid": int(body["tid"]), "cid": int(body["cid"])})
                 threading.Thread(target=poll_gateway, daemon=True).start()
@@ -940,9 +1284,18 @@ def main():
     if p.get("enabled", True):
         PYB_PREFIX[0] = p.get("worker_prefix") or "pyb"
         PYB[0] = pyb_mod.PyBlock(HERE, cfg, notify=mrr_bot.telegram, gateway_clients=gateway_clients,
-                                 mrr_ref=mrr_ref_sats, address_fallback=profile_address, analyse=pyb_analyse)
+                                 mrr_ref=mrr_ref_sats, address_fallback=profile_address, analyse=pyb_analyse,
+                                 on_finish=pyb_finished)
         threading.Thread(target=PYB[0].loop, daemon=True).start()
+    h = p2h_mod.settings(c)
+    if h.get("enabled", True):
+        P2H_PREFIX[0] = h.get("worker_prefix") or "p2h"
+        P2H[0] = p2h_mod.P2Hash(HERE, cfg, measure=p2h_measure, notify=mrr_bot.telegram, address_fn=p2h_address,
+                                analyse=pyb_analyse, on_finish=p2h_finished)
+        P2H[0].start()
     threading.Thread(target=gateway_loop, daemon=True).start()
+    if AUDIT[0]:
+        threading.Thread(target=ticket_loop, daemon=True).start()
     port = int(raw.get("dashboard_port") or 7160)
     srv = ThreadingHTTPServer(("0.0.0.0", port), Handler)
     print(f"MRR Command Center on http://0.0.0.0:{port}/ (user: any, password in config.json)", flush=True)

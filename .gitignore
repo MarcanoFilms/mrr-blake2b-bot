@@ -10,3 +10,6 @@ audit.db-wal
 audit.db-shm
 pyblock.json
 pyblock.json.tmp
+p2hash.json
+p2hash.json.tmp
+config.json.tmp

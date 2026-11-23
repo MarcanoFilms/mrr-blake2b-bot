@@ -198,12 +198,28 @@ class MRR:
         })
 
 
+def _animate(text):
+    """Optional animated (custom) emoji: if ANIM_PATH points at a dir with anim.py (Marcano's relay),
+    the alert goes out as HTML with <tg-emoji> tags; otherwise as plain text, unchanged."""
+    path = os.path.expanduser(os.environ.get("ANIM_PATH", "~/Projects/infinity-relay"))
+    try:
+        if path not in sys.path:
+            sys.path.append(path)
+        import html
+        from anim import animate
+        return animate(html.escape(text, quote=False))
+    except Exception:
+        return None
+
+
 def telegram(cfg, text):
     tg = cfg["telegram"]
     if not tg.get("token") or not tg.get("chat_id"):
         return
     try:
-        data = urllib.parse.urlencode({"chat_id": tg["chat_id"], "text": text}).encode()
+        rich = _animate(text)
+        body = {"chat_id": tg["chat_id"], "text": rich, "parse_mode": "HTML"} if rich else {"chat_id": tg["chat_id"], "text": text}
+        data = urllib.parse.urlencode(body).encode()
         urllib.request.urlopen(f"https://api.telegram.org/bot{tg['token']}/sendMessage", data=data, timeout=15)
     except Exception as e:  # never let alerts break the bot
         print(f"[telegram failed: {e}]", file=sys.stderr)
